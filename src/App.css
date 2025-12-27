@@ -6,21 +6,28 @@
 
 h1 {
   text-align: center;
-  color: #1e3a8a;
+  color: #1e40af;
+  margin-bottom: 10px;
+}
+
+.datetime {
+  text-align: center;
   margin-bottom: 15px;
+  color: #374151;
+  font-size: 14px;
 }
 
 .card {
-  background: white;
+  background: #ffffff;
   padding: 15px;
   margin-bottom: 15px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .day-title {
-  color: #0f172a;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  color: #111827;
 }
 
 .row {
@@ -40,30 +47,19 @@ input {
   border: 1px solid #ccc;
 }
 
-button {
-  margin-top: 8px;
-  padding: 8px;
-  width: 100%;
-  border: none;
-  border-radius: 6px;
-  background: #2563eb;
-  color: white;
+.budget-label {
   font-weight: bold;
-  cursor: pointer;
+  color: black;
 }
 
-button.secondary {
-  background: #16a34a;
+.total {
+  margin-top: 6px;
+  font-weight: bold;
 }
 
-.summary-box {
+.summary {
   background: #e0f2fe;
   padding: 15px;
   border-radius: 10px;
-  margin-top: 10px;
-}
-
-.summary-box p {
-  margin: 6px 0;
   font-weight: bold;
 }
