@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function App() {
   const [budget, setBudget] = useState(0);
-  const [week, setWeek] = useState(1);
-  const [showSummary, setShowSummary] = useState(false);
+  const [dateTime, setDateTime] = useState("");
 
   const [data, setData] = useState(
     days.map(() => ({
@@ -14,19 +13,29 @@ function App() {
       petrol: 0,
       things: 0,
       snacks: 0,
-      saved: false,
     }))
   );
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const date = now.toLocaleDateString();
+      const time = now.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+      });
+      setDateTime(`${date} | ${time}`);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (dayIndex, field, value) => {
     const updated = [...data];
     updated[dayIndex][field] = Number(value);
-    setData(updated);
-  };
-
-  const saveDay = (index) => {
-    const updated = [...data];
-    updated[index].saved = true;
     setData(updated);
   };
 
@@ -38,52 +47,16 @@ function App() {
     0
   );
 
-  const monthlyExpense = weeklyExpense * 4;
   const balance = budget - weeklyExpense;
-
-  if (showSummary) {
-    return (
-      <div className="container">
-        <h1>📊 Summary (Week {week})</h1>
-
-        <div className="summary-box">
-          <p>Weekly Budget: ₹{budget}</p>
-          <p>Weekly Expense: ₹{weeklyExpense}</p>
-          <p>Balance: ₹{balance}</p>
-        </div>
-
-        <div className="summary-box">
-          <p>Monthly Expense: ₹{monthlyExpense}</p>
-        </div>
-
-        <button
-          className="secondary"
-          onClick={() => {
-            setWeek(week + 1);
-            setShowSummary(false);
-            setData(
-              days.map(() => ({
-                food: 0,
-                petrol: 0,
-                things: 0,
-                snacks: 0,
-                saved: false,
-              }))
-            );
-          }}
-        >
-          Next Week →
-        </button>
-      </div>
-    );
-  }
+  const monthlyExpense = weeklyExpense * 4;
 
   return (
     <div className="container">
       <h1>💰 Money Manager</h1>
+      <div className="datetime">{dateTime}</div>
 
       <div className="card">
-        <label>Weekly Budget (₹)</label>
+        <label className="budget-label">Weekly Budget (₹)</label>
         <input
           type="number"
           value={budget}
@@ -100,7 +73,6 @@ function App() {
               <span>{cat}</span>
               <input
                 type="number"
-                disabled={data[index].saved}
                 onChange={(e) =>
                   handleChange(index, cat, e.target.value)
                 }
@@ -108,17 +80,17 @@ function App() {
             </div>
           ))}
 
-          <button onClick={() => saveDay(index)}>
-            {data[index].saved ? "Saved ✅" : "OK / Save Day"}
-          </button>
-
-          <p>Day Total: ₹{dayTotal(data[index])}</p>
+          <p className="total">
+            Day Total: ₹{dayTotal(data[index])}
+          </p>
         </div>
       ))}
 
-      <button className="secondary" onClick={() => setShowSummary(true)}>
-        Next → Summary
-      </button>
+      <div className="summary">
+        <p>Weekly Expense: ₹{weeklyExpense}</p>
+        <p>Balance: ₹{balance}</p>
+        <p>Monthly Expense: ₹{monthlyExpense}</p>
+      </div>
     </div>
   );
 }
