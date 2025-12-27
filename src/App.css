@@ -1,11 +1,12 @@
 .container {
-  max-width: 450px;
+  max-width: 480px;
   margin: auto;
   padding: 20px;
 }
 
 h1 {
   text-align: center;
+  color: #1e3a8a;
   margin-bottom: 15px;
 }
 
@@ -13,15 +14,19 @@ h1 {
   background: white;
   padding: 15px;
   margin-bottom: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.day-title {
+  color: #0f172a;
+  margin-bottom: 10px;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin: 6px 0;
+  margin-bottom: 6px;
 }
 
 .row span {
@@ -37,23 +42,28 @@ input {
 
 button {
   margin-top: 8px;
-  padding: 7px;
+  padding: 8px;
   width: 100%;
-  background: #1976d2;
-  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  background: #2563eb;
+  color: white;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.total {
-  margin-top: 6px;
-  font-weight: bold;
+button.secondary {
+  background: #16a34a;
 }
 
-.summary {
-  background: #e3f2fd;
+.summary-box {
+  background: #e0f2fe;
   padding: 15px;
-  border-radius: 8px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.summary-box p {
+  margin: 6px 0;
   font-weight: bold;
 }
