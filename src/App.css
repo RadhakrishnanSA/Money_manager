@@ -1,57 +1,54 @@
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: #f4f6f8;
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
 }
 
 .container {
-  max-width: 400px;
-  margin: 40px auto;
-  background: white;
+  max-width: 450px;
+  margin: auto;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
   text-align: center;
-  color: #333;
 }
 
 .card {
-  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.card h2 {
-  margin-bottom: 10px;
-  color: #444;
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0;
 }
 
-label {
-  font-weight: bold;
+.row span {
+  width: 60px;
 }
 
 input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  margin-bottom: 10px;
-  border-radius: 5px;
+  width: 120px;
+  padding: 5px;
+  border-radius: 4px;
   border: 1px solid #ccc;
 }
 
-input:focus {
-  outline: none;
-  border-color: #4caf50;
+.total {
+  margin-top: 8px;
+  font-weight: bold;
+  color: #333;
 }
 
-.result {
-  background-color: #e8f5e9;
+.summary {
+  background: #e3f2fd;
   padding: 15px;
   border-radius: 8px;
-}
-
-.result p {
-  margin: 8px 0;
-  font-size: 16px;
+  font-weight: bold;
 }
