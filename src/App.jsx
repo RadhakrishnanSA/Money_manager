@@ -1,12 +1,14 @@
 import { useState } from "react";
 import "./App.css";
 
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function App() {
   const [budget, setBudget] = useState(0);
+  const [week, setWeek] = useState(1);
+  const [showSummary, setShowSummary] = useState(false);
 
-  const [weekData, setWeekData] = useState(
+  const [data, setData] = useState(
     days.map(() => ({
       food: 0,
       petrol: 0,
@@ -17,27 +19,64 @@ function App() {
   );
 
   const handleChange = (dayIndex, field, value) => {
-    const updated = [...weekData];
+    const updated = [...data];
     updated[dayIndex][field] = Number(value);
-    setWeekData(updated);
+    setData(updated);
   };
 
-  const saveDay = (dayIndex) => {
-    const updated = [...weekData];
-    updated[dayIndex].saved = true;
-    setWeekData(updated);
+  const saveDay = (index) => {
+    const updated = [...data];
+    updated[index].saved = true;
+    setData(updated);
   };
 
-  const dayTotal = (day) =>
-    day.food + day.petrol + day.things + day.snacks;
+  const dayTotal = (d) =>
+    d.food + d.petrol + d.things + d.snacks;
 
-  const weeklyExpense = weekData.reduce(
-    (sum, day) => sum + dayTotal(day),
+  const weeklyExpense = data.reduce(
+    (sum, d) => sum + dayTotal(d),
     0
   );
 
-  const balance = budget - weeklyExpense;
   const monthlyExpense = weeklyExpense * 4;
+  const balance = budget - weeklyExpense;
+
+  if (showSummary) {
+    return (
+      <div className="container">
+        <h1>📊 Summary (Week {week})</h1>
+
+        <div className="summary-box">
+          <p>Weekly Budget: ₹{budget}</p>
+          <p>Weekly Expense: ₹{weeklyExpense}</p>
+          <p>Balance: ₹{balance}</p>
+        </div>
+
+        <div className="summary-box">
+          <p>Monthly Expense: ₹{monthlyExpense}</p>
+        </div>
+
+        <button
+          className="secondary"
+          onClick={() => {
+            setWeek(week + 1);
+            setShowSummary(false);
+            setData(
+              days.map(() => ({
+                food: 0,
+                petrol: 0,
+                things: 0,
+                snacks: 0,
+                saved: false,
+              }))
+            );
+          }}
+        >
+          Next Week →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -54,68 +93,32 @@ function App() {
 
       {days.map((day, index) => (
         <div className="card" key={day}>
-          <h2>{day}</h2>
+          <h3 className="day-title">{day}</h3>
 
-          <div className="row">
-            <span>Food</span>
-            <input
-              type="number"
-              disabled={weekData[index].saved}
-              onChange={(e) =>
-                handleChange(index, "food", e.target.value)
-              }
-            />
-          </div>
-
-          <div className="row">
-            <span>Petrol</span>
-            <input
-              type="number"
-              disabled={weekData[index].saved}
-              onChange={(e) =>
-                handleChange(index, "petrol", e.target.value)
-              }
-            />
-          </div>
-
-          <div className="row">
-            <span>Things</span>
-            <input
-              type="number"
-              disabled={weekData[index].saved}
-              onChange={(e) =>
-                handleChange(index, "things", e.target.value)
-              }
-            />
-          </div>
-
-          <div className="row">
-            <span>Snacks</span>
-            <input
-              type="number"
-              disabled={weekData[index].saved}
-              onChange={(e) =>
-                handleChange(index, "snacks", e.target.value)
-              }
-            />
-          </div>
+          {["food", "petrol", "things", "snacks"].map((cat) => (
+            <div className="row" key={cat}>
+              <span>{cat}</span>
+              <input
+                type="number"
+                disabled={data[index].saved}
+                onChange={(e) =>
+                  handleChange(index, cat, e.target.value)
+                }
+              />
+            </div>
+          ))}
 
           <button onClick={() => saveDay(index)}>
-            {weekData[index].saved ? "Saved ✅" : "OK / Save"}
+            {data[index].saved ? "Saved ✅" : "OK / Save Day"}
           </button>
 
-          <p className="total">
-            Day Total: ₹{dayTotal(weekData[index])}
-          </p>
+          <p>Day Total: ₹{dayTotal(data[index])}</p>
         </div>
       ))}
 
-      <div className="summary">
-        <h2>Summary</h2>
-        <p>Weekly Expense: ₹{weeklyExpense}</p>
-        <p>Balance: ₹{balance}</p>
-        <p>Monthly Expense: ₹{monthlyExpense}</p>
-      </div>
+      <button className="secondary" onClick={() => setShowSummary(true)}>
+        Next → Summary
+      </button>
     </div>
   );
 }
