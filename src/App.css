@@ -1,24 +1,31 @@
 .container {
-  max-width: 480px;
+  max-width: 450px;
   margin: auto;
   padding: 20px;
+  position: relative;
 }
 
 h1 {
   text-align: center;
-  color: #1e40af;
   margin-bottom: 10px;
+  color: #1e3a8a;
 }
 
-.datetime {
-  text-align: center;
-  margin-bottom: 15px;
-  color: #374151;
-  font-size: 14px;
-}
-
-.card {
+/* Date Time Box */
+.datetime-box {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   background: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Card */
+.card {
+  background: white;
   padding: 15px;
   margin-bottom: 15px;
   border-radius: 10px;
@@ -26,14 +33,15 @@ h1 {
 }
 
 .day-title {
-  margin-bottom: 8px;
+  text-align: center;
+  margin-bottom: 10px;
   color: #111827;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .row span {
@@ -50,11 +58,6 @@ input {
 .budget-label {
   font-weight: bold;
   color: black;
-}
-
-.total {
-  margin-top: 6px;
-  font-weight: bold;
 }
 
 .summary {
