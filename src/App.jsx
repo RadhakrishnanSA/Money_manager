@@ -1,82 +1,81 @@
 import { useState } from "react";
 import "./App.css";
 
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
 function App() {
-  const [weeklyAmount, setWeeklyAmount] = useState(0);
+  const [budget, setBudget] = useState(0);
+
   const [expenses, setExpenses] = useState({
-    food: 0,
-    petrol: 0,
-    things: 0,
-    snacks: 0,
+    food: Array(7).fill(0),
+    petrol: Array(7).fill(0),
+    things: Array(7).fill(0),
+    snacks: Array(7).fill(0),
   });
 
-  const handleExpenseChange = (e) => {
-    const { name, value } = e.target;
-    setExpenses({ ...expenses, [name]: Number(value) });
+  const handleChange = (category, index, value) => {
+    const updated = [...expenses[category]];
+    updated[index] = Number(value);
+
+    setExpenses({
+      ...expenses,
+      [category]: updated,
+    });
   };
 
-  const totalWeeklyExpense =
-    expenses.food +
-    expenses.petrol +
-    expenses.things +
-    expenses.snacks;
+  const categoryTotal = (category) =>
+    expenses[category].reduce((a, b) => a + b, 0);
 
-  const balance = weeklyAmount - totalWeeklyExpense;
-  const monthlyExpense = totalWeeklyExpense * 4;
+  const weeklyExpense =
+    categoryTotal("food") +
+    categoryTotal("petrol") +
+    categoryTotal("things") +
+    categoryTotal("snacks");
+
+  const balance = budget - weeklyExpense;
+  const monthlyExpense = weeklyExpense * 4;
 
   return (
     <div className="container">
-      <h1>Money Manager</h1>
+      <h1>💰 Money Manager</h1>
 
       <div className="card">
-        <label>Weekly Amount Given</label>
+        <label>Weekly Budget (₹)</label>
         <input
           type="number"
-          placeholder="Enter weekly amount"
-          onChange={(e) => setWeeklyAmount(Number(e.target.value))}
+          value={budget}
+          onChange={(e) => setBudget(Number(e.target.value))}
         />
       </div>
 
-      <div className="card">
-        <h2>Weekly Expenses</h2>
+      {["food", "petrol", "things", "snacks"].map((cat) => (
+        <div className="card" key={cat}>
+          <h2>{cat.toUpperCase()}</h2>
+          {days.map((day, index) => (
+            <div className="row" key={day}>
+              <span>{day}</span>
+              <input
+                type="number"
+                onChange={(e) =>
+                  handleChange(cat, index, e.target.value)
+                }
+              />
+            </div>
+          ))}
+          <p className="total">
+            {cat} Total: ₹{categoryTotal(cat)}
+          </p>
+        </div>
+      ))}
 
-        <input
-          type="number"
-          name="food"
-          placeholder="Food Expense"
-          onChange={handleExpenseChange}
-        />
-
-        <input
-          type="number"
-          name="petrol"
-          placeholder="Petrol Expense"
-          onChange={handleExpenseChange}
-        />
-
-        <input
-          type="number"
-          name="things"
-          placeholder="Things Expense"
-          onChange={handleExpenseChange}
-        />
-
-        <input
-          type="number"
-          name="snacks"
-          placeholder="Snacks Expense"
-          onChange={handleExpenseChange}
-        />
-      </div>
-
-      <div className="result">
-        <p><strong>Total Weekly Expense:</strong> ₹{totalWeeklyExpense}</p>
-        <p><strong>Weekly Balance:</strong> ₹{balance}</p>
-        <p><strong>Monthly Expense:</strong> ₹{monthlyExpense}</p>
+      <div className="summary">
+        <h2>Summary</h2>
+        <p>Weekly Expense: ₹{weeklyExpense}</p>
+        <p>Balance: ₹{balance}</p>
+        <p>Monthly Expense: ₹{monthlyExpense}</p>
       </div>
     </div>
   );
 }
 
 export default App;
-
