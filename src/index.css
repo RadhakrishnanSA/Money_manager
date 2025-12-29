@@ -5,8 +5,8 @@
 }
 
 body {
-  background: linear-gradient(135deg, #0f0f0f, #2b2b2b);
-  font-family: system-ui, sans-serif;
-  color: #fff;
+  background: linear-gradient(135deg, #1c1c1c, #2e2e2e);
+  font-family: Arial, sans-serif;
+  color: white;
   min-height: 100vh;
 }
