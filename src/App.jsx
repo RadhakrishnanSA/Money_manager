@@ -1,123 +1,102 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "./supabase";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import "./App.css";
 
-const categories = ["Food", "Petrol", "Things", "Snacks"];
+const categories = ["food", "petrol", "things", "snacks"];
 
 export default function App() {
+  const today = new Date();
+  const date = today.toLocaleDateString();
+  const time = today.toLocaleTimeString("en-US", { hour12: true });
+
+  const [budget, setBudget] = useState(0);
   const [expenses, setExpenses] = useState({
-    Food: "",
-    Petrol: "",
-    Things: "",
-    Snacks: "",
+    food: 0,
+    petrol: 0,
+    things: 0,
+    snacks: 0,
   });
 
-  const [savedData, setSavedData] = useState(
-    JSON.parse(localStorage.getItem("expenses")) || []
-  );
+  const handleChange = (cat, val) =>
+    setExpenses({ ...expenses, [cat]: Number(val) });
 
-  const [showView, setShowView] = useState(false);
+  const dailyExpense =
+    expenses.food + expenses.petrol + expenses.things + expenses.snacks;
 
-  const totalToday = Object.values(expenses).reduce(
-    (a, b) => a + Number(b || 0),
-    0
-  );
+  const weeklyExpense = dailyExpense;
+  const balance = budget - weeklyExpense;
 
-  const weeklyExpense = savedData
-    .slice(-7)
-    .reduce((sum, item) => sum + item.total, 0);
-
-  const monthlyExpense = savedData.reduce(
-    (sum, item) => sum + item.total,
-    0
-  );
-
+  // 🔹 SAVE TO SUPABASE
   const saveData = async () => {
-    const entry = {
-      date: new Date().toLocaleDateString(),
-      food: Number(expenses.Food || 0),
-      petrol: Number(expenses.Petrol || 0),
-      things: Number(expenses.Things || 0),
-      snacks: Number(expenses.Snacks || 0),
-      total: totalToday,
-    };
-
-    const { error } = await supabase
-      .from("daily_expenses")
-      .insert([entry]);
+    const { error } = await supabase.from("daily_expenses").insert([
+      {
+        date,
+        time,
+        ...expenses,
+        daily_expense: dailyExpense,
+        weekly_expense: weeklyExpense,
+        balance,
+      },
+    ]);
 
     if (error) {
-      alert("❌ Database error");
-      return;
+      alert("Error saving data");
+      console.error(error);
+    } else {
+      alert("Data saved successfully ✅");
     }
-
-    const updated = [...savedData, entry];
-    setSavedData(updated);
-    localStorage.setItem("expenses", JSON.stringify(updated));
-
-    setExpenses({ Food: "", Petrol: "", Things: "", Snacks: "" });
-    alert("✅ Saved");
   };
 
-  const downloadExcel = () => {
-    let csv =
-      "Date,Food,Petrol,Things,Snacks,Total\n";
+  // 🔹 EXPORT TO EXCEL
+  const exportExcel = async () => {
+    const { data } = await supabase.from("daily_expenses").select("*");
 
-    savedData.forEach((d) => {
-      csv += `${d.date},${d.food},${d.petrol},${d.things},${d.snacks},${d.total}\n`;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
     });
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Monthly_Expense.csv";
-    a.click();
+    const file = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
+
+    saveAs(file, "Daily_Expenses.xlsx");
   };
 
   return (
-    <div className="app">
-      {/* 🔝 Weekly Expense Box */}
-      <div className="weekly-box">
-        Weekly Expense: ₹{weeklyExpense}
-      </div>
+    <div className="container">
+      <div className="date-box">{date}</div>
 
-      <h1>Expense Tracker</h1>
+      <h1>Money Manager</h1>
 
-      <div className="card">
-        {categories.map((cat) => (
-          <div key={cat} className="row">
-            <label>{cat}</label>
-            <input
-              type="number"
-              value={expenses[cat]}
-              onChange={(e) =>
-                setExpenses({ ...expenses, [cat]: e.target.value })
-              }
-              placeholder="₹"
-            />
-          </div>
-        ))}
-      </div>
+      <input
+        type="number"
+        placeholder="Weekly Budget"
+        value={budget}
+        onChange={(e) => setBudget(Number(e.target.value))}
+      />
 
-      <p className="total">Today Expense: ₹{totalToday}</p>
+      {categories.map((cat) => (
+        <input
+          key={cat}
+          type="number"
+          placeholder={cat}
+          onChange={(e) => handleChange(cat, e.target.value)}
+        />
+      ))}
 
-      <button className="btn" onClick={saveData}>
-        Save to Database
-      </button>
+      <p>Daily Expense: ₹{dailyExpense}</p>
+      <p>Weekly Expense: ₹{weeklyExpense}</p>
+      <p>Balance: ₹{balance}</p>
 
-      <button className="btn view" onClick={() => setShowView(!showView)}>
-        View
-      </button>
-
-      {showView && (
-        <div className="view-box">
-          <p>Monthly Expense: ₹{monthlyExpense}</p>
-          <button className="btn" onClick={downloadExcel}>
-            Download Excel
-          </button>
-        </div>
-      )}
+      <button onClick={saveData}>Save to Database</button>
+      <button onClick={exportExcel}>Download Excel</button>
     </div>
   );
 }
