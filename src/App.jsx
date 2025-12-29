@@ -1,72 +1,83 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
-const categories = ["food", "petrol", "things", "snacks"];
+const categories = ["Food", "Petrol", "Things", "Snacks"];
 
-export default function App() {
+function App() {
+  const [time, setTime] = useState("");
   const [budget, setBudget] = useState("");
-  const [showView, setShowView] = useState(false);
-  const [showMonthly, setShowMonthly] = useState(false);
-
   const [expenses, setExpenses] = useState({
-    food: "",
-    petrol: "",
-    things: "",
-    snacks: "",
+    Food: "",
+    Petrol: "",
+    Things: "",
+    Snacks: "",
   });
 
-  const handleChange = (cat, val) => {
-    setExpenses({ ...expenses, [cat]: val });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setTime(
+        now.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleChange = (cat, value) => {
+    setExpenses({ ...expenses, [cat]: value });
   };
 
-  const dailyExpense =
-    Number(expenses.food || 0) +
-    Number(expenses.petrol || 0) +
-    Number(expenses.things || 0) +
-    Number(expenses.snacks || 0);
+  const dailyExpense = Object.values(expenses).reduce(
+    (a, b) => a + Number(b || 0),
+    0
+  );
 
-  const weeklyExpense = dailyExpense;
-  const balance = Number(budget || 0) - weeklyExpense;
-  const monthlyExpense = weeklyExpense * 4;
+  const balance = budget - dailyExpense;
+  const weeklyExpense = dailyExpense * 7;
+
+  const saveData = () => {
+    const data = {
+      date: new Date().toLocaleDateString(),
+      time,
+      budget,
+      expenses,
+      dailyExpense,
+      weeklyExpense,
+      balance,
+    };
+
+    localStorage.setItem("money_manager_data", JSON.stringify(data));
+    alert("✅ Data Saved Successfully");
+  };
 
   return (
     <div className="container">
-      {/* Top bar */}
-      <div className="top-bar">
-        <h2>Expense Manager</h2>
-
-        <div className="view-menu" onClick={() => setShowView(!showView)}>
-          View ⌄
-          {showView && (
-            <div className="view-box">
-              <p onClick={() => setShowMonthly(!showMonthly)}>
-                Monthly Expense
-              </p>
-              <p>Download Excel</p>
-            </div>
-          )}
-        </div>
+      <div className="header">
+        <h2>💰 Money Manager</h2>
+        <div className="time-box">{time}</div>
       </div>
 
-      {/* Weekly Budget */}
-      <div className="card budget-box">
-        <label>Weekly Budget</label>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <span>₹</span>
-          <input
-            type="number"
-            placeholder="Enter amount"
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-          />
-        </div>
+      <div className="budget-box">
+        <label>Weekly Budget (₹)</label>
+        <input
+          type="number"
+          placeholder="Enter budget"
+          value={budget}
+          onChange={(e) => setBudget(e.target.value)}
+        />
       </div>
 
-      {/* Categories */}
-      <div className="card">
-        {categories.map((cat) => (
-          <div className="category-row" key={cat}>
-            <span>{cat}</span>
+      {categories.map((cat) => (
+        <div className="card" key={cat}>
+          <h3>{cat}</h3>
+          <div className="row">
+            <span>Amount</span>
             <input
               type="number"
               placeholder="₹"
@@ -74,17 +85,20 @@ export default function App() {
               onChange={(e) => handleChange(cat, e.target.value)}
             />
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
-      {/* Summary */}
-      <div className="card summary">
+      <div className="summary">
         <p>Daily Expense: ₹{dailyExpense}</p>
         <p>Weekly Expense: ₹{weeklyExpense}</p>
         <p>Balance: ₹{balance}</p>
-
-        {showMonthly && <p>Monthly Expense: ₹{monthlyExpense}</p>}
       </div>
+
+      <button className="save-btn" onClick={saveData}>
+        Save to Database
+      </button>
     </div>
   );
 }
+
+export default App;
