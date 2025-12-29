@@ -1,102 +1,90 @@
 import { useState } from "react";
-import { supabase } from "./supabase";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 import "./App.css";
 
 const categories = ["food", "petrol", "things", "snacks"];
 
 export default function App() {
-  const today = new Date();
-  const date = today.toLocaleDateString();
-  const time = today.toLocaleTimeString("en-US", { hour12: true });
+  const [budget, setBudget] = useState("");
+  const [showView, setShowView] = useState(false);
+  const [showMonthly, setShowMonthly] = useState(false);
 
-  const [budget, setBudget] = useState(0);
   const [expenses, setExpenses] = useState({
-    food: 0,
-    petrol: 0,
-    things: 0,
-    snacks: 0,
+    food: "",
+    petrol: "",
+    things: "",
+    snacks: "",
   });
 
-  const handleChange = (cat, val) =>
-    setExpenses({ ...expenses, [cat]: Number(val) });
+  const handleChange = (cat, val) => {
+    setExpenses({ ...expenses, [cat]: val });
+  };
 
   const dailyExpense =
-    expenses.food + expenses.petrol + expenses.things + expenses.snacks;
+    Number(expenses.food || 0) +
+    Number(expenses.petrol || 0) +
+    Number(expenses.things || 0) +
+    Number(expenses.snacks || 0);
 
   const weeklyExpense = dailyExpense;
-  const balance = budget - weeklyExpense;
-
-  // 🔹 SAVE TO SUPABASE
-  const saveData = async () => {
-    const { error } = await supabase.from("daily_expenses").insert([
-      {
-        date,
-        time,
-        ...expenses,
-        daily_expense: dailyExpense,
-        weekly_expense: weeklyExpense,
-        balance,
-      },
-    ]);
-
-    if (error) {
-      alert("Error saving data");
-      console.error(error);
-    } else {
-      alert("Data saved successfully ✅");
-    }
-  };
-
-  // 🔹 EXPORT TO EXCEL
-  const exportExcel = async () => {
-    const { data } = await supabase.from("daily_expenses").select("*");
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-
-    const file = new Blob([excelBuffer], {
-      type: "application/octet-stream",
-    });
-
-    saveAs(file, "Daily_Expenses.xlsx");
-  };
+  const balance = Number(budget || 0) - weeklyExpense;
+  const monthlyExpense = weeklyExpense * 4;
 
   return (
     <div className="container">
-      <div className="date-box">{date}</div>
+      {/* Top bar */}
+      <div className="top-bar">
+        <h2>Expense Manager</h2>
 
-      <h1>Money Manager</h1>
+        <div className="view-menu" onClick={() => setShowView(!showView)}>
+          View ⌄
+          {showView && (
+            <div className="view-box">
+              <p onClick={() => setShowMonthly(!showMonthly)}>
+                Monthly Expense
+              </p>
+              <p>Download Excel</p>
+            </div>
+          )}
+        </div>
+      </div>
 
-      <input
-        type="number"
-        placeholder="Weekly Budget"
-        value={budget}
-        onChange={(e) => setBudget(Number(e.target.value))}
-      />
+      {/* Weekly Budget */}
+      <div className="card budget-box">
+        <label>Weekly Budget</label>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <span>₹</span>
+          <input
+            type="number"
+            placeholder="Enter amount"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+          />
+        </div>
+      </div>
 
-      {categories.map((cat) => (
-        <input
-          key={cat}
-          type="number"
-          placeholder={cat}
-          onChange={(e) => handleChange(cat, e.target.value)}
-        />
-      ))}
+      {/* Categories */}
+      <div className="card">
+        {categories.map((cat) => (
+          <div className="category-row" key={cat}>
+            <span>{cat}</span>
+            <input
+              type="number"
+              placeholder="₹"
+              value={expenses[cat]}
+              onChange={(e) => handleChange(cat, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
 
-      <p>Daily Expense: ₹{dailyExpense}</p>
-      <p>Weekly Expense: ₹{weeklyExpense}</p>
-      <p>Balance: ₹{balance}</p>
+      {/* Summary */}
+      <div className="card summary">
+        <p>Daily Expense: ₹{dailyExpense}</p>
+        <p>Weekly Expense: ₹{weeklyExpense}</p>
+        <p>Balance: ₹{balance}</p>
 
-      <button onClick={saveData}>Save to Database</button>
-      <button onClick={exportExcel}>Download Excel</button>
+        {showMonthly && <p>Monthly Expense: ₹{monthlyExpense}</p>}
+      </div>
     </div>
   );
 }
