@@ -1,80 +1,104 @@
 .container {
-  max-width: 420px;
+  max-width: 430px;
   margin: auto;
   padding: 20px;
   position: relative;
 }
 
-/* Date */
-.date-box {
+/* Top bar */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.view-menu {
+  cursor: pointer;
+  position: relative;
+}
+
+.view-box {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #1e1e1e;
-  border: 1px solid white;
-  padding: 6px 10px;
+  right: 0;
+  top: 22px;
+  background: #1f1f1f;
+  border: 1px solid #555;
   border-radius: 6px;
-  font-size: 12px;
+  width: 160px;
+  z-index: 10;
 }
 
-/* Title */
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
+.view-box p {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #333;
 }
 
-/* Card */
+.view-box p:last-child {
+  border-bottom: none;
+}
+
+.view-box p:hover {
+  background: #2d2d2d;
+}
+
+/* Cards */
 .card {
   background: #1a1a1a;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 15px;
   margin-bottom: 15px;
   border: 1px solid #333;
 }
 
-/* Inputs */
-label {
-  font-size: 14px;
-  color: #e5e7eb;
+/* Weekly budget */
+.budget-box {
+  font-weight: bold;
 }
 
+.budget-box span {
+  font-size: 18px;
+  margin-right: 6px;
+}
+
+/* Inputs */
 input {
   width: 100%;
-  margin-top: 6px;
   padding: 10px;
+  margin-top: 6px;
   background: transparent;
   border: 1px solid white;
-  border-radius: 6px;
+  border-radius: 8px;
   color: white;
 }
 
-/* Expense rows */
-.row {
+/* Category layout */
+.category-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 8px 0;
+  margin: 10px 0;
 }
 
-.row span {
+.category-row span {
+  width: 80px;
   text-transform: capitalize;
 }
 
-/* Summary text */
+/* Summary */
 .summary p {
   margin: 8px 0;
-  font-size: 15px;
 }
 
 /* Button */
 button {
   width: 100%;
   padding: 12px;
-  margin-top: 12px;
-  background: #4c1d95; /* dark purple */
+  background: #4c1d95;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
 }
