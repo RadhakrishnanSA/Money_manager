@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "./supabase"; 
 import "./App.css";
 
 const categories = ["Food", "Petrol", "Things", "Snacks"];
@@ -18,7 +19,7 @@ export default function App() {
   const [showView, setShowView] = useState(false);
   const [time, setTime] = useState("");
 
-  // Live Time
+  /* Live Time */
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -44,28 +45,45 @@ export default function App() {
     0
   );
 
-  const saveData = () => {
+  /* ✅ SAVE TO SUPABASE + LOCAL */
+  const saveData = async () => {
     const entry = {
       date: new Date().toLocaleDateString(),
       time,
-      ...expenses,
+      food: Number(expenses.Food || 0),
+      petrol: Number(expenses.Petrol || 0),
+      things: Number(expenses.Things || 0),
+      snacks: Number(expenses.Snacks || 0),
       total: totalToday,
     };
 
+    /* 🔹 Save to Supabase */
+    const { error } = await supabase
+      .from("daily_expenses")
+      .insert([entry]);
+
+    if (error) {
+      alert("❌ Database error");
+      console.error(error);
+      return;
+    }
+
+    /* 🔹 Save locally (for Excel) */
     const updated = [...savedData, entry];
     setSavedData(updated);
     localStorage.setItem("expenses", JSON.stringify(updated));
 
     setExpenses({ Food: "", Petrol: "", Things: "", Snacks: "" });
-    alert("Saved Successfully ✅");
+    alert("✅ Saved to Database");
   };
 
+  /* ✅ DOWNLOAD EXCEL (CSV) */
   const downloadExcel = () => {
     let csv =
       "Date,Time,Food,Petrol,Things,Snacks,Total\n";
 
     savedData.forEach((d) => {
-      csv += `${d.date},${d.time},${d.Food},${d.Petrol},${d.Things},${d.Snacks},${d.total}\n`;
+      csv += `${d.date},${d.time},${d.food},${d.petrol},${d.things},${d.snacks},${d.total}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -101,7 +119,7 @@ export default function App() {
       <p className="total">Today Expense: ₹{totalToday}</p>
 
       <button className="btn" onClick={saveData}>
-        Save
+        Save to Database
       </button>
 
       <button className="btn view" onClick={() => setShowView(!showView)}>
