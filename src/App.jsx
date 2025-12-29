@@ -3,9 +3,7 @@ import "./App.css";
 
 const categories = ["Food", "Petrol", "Things", "Snacks"];
 
-function App() {
-  const [time, setTime] = useState("");
-  const [budget, setBudget] = useState("");
+export default function App() {
   const [expenses, setExpenses] = useState({
     Food: "",
     Petrol: "",
@@ -13,6 +11,14 @@ function App() {
     Snacks: "",
   });
 
+  const [savedData, setSavedData] = useState(
+    JSON.parse(localStorage.getItem("expenses")) || []
+  );
+
+  const [showView, setShowView] = useState(false);
+  const [time, setTime] = useState("");
+
+  // Live Time
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -25,80 +31,91 @@ function App() {
         })
       );
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  const handleChange = (cat, value) => {
-    setExpenses({ ...expenses, [cat]: value });
-  };
-
-  const dailyExpense = Object.values(expenses).reduce(
+  const totalToday = Object.values(expenses).reduce(
     (a, b) => a + Number(b || 0),
     0
   );
 
-  const balance = budget - dailyExpense;
-  const weeklyExpense = dailyExpense * 7;
+  const monthlyExpense = savedData.reduce(
+    (sum, item) => sum + item.total,
+    0
+  );
 
   const saveData = () => {
-    const data = {
+    const entry = {
       date: new Date().toLocaleDateString(),
       time,
-      budget,
-      expenses,
-      dailyExpense,
-      weeklyExpense,
-      balance,
+      ...expenses,
+      total: totalToday,
     };
 
-    localStorage.setItem("money_manager_data", JSON.stringify(data));
-    alert("✅ Data Saved Successfully");
+    const updated = [...savedData, entry];
+    setSavedData(updated);
+    localStorage.setItem("expenses", JSON.stringify(updated));
+
+    setExpenses({ Food: "", Petrol: "", Things: "", Snacks: "" });
+    alert("Saved Successfully ✅");
+  };
+
+  const downloadExcel = () => {
+    let csv =
+      "Date,Time,Food,Petrol,Things,Snacks,Total\n";
+
+    savedData.forEach((d) => {
+      csv += `${d.date},${d.time},${d.Food},${d.Petrol},${d.Things},${d.Snacks},${d.total}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Monthly_Expense.csv";
+    a.click();
   };
 
   return (
-    <div className="container">
-      <div className="header">
-        <h2>💰 Money Manager</h2>
-        <div className="time-box">{time}</div>
-      </div>
+    <div className="app">
+      <div className="time-box">{time}</div>
 
-      <div className="budget-box">
-        <label>Weekly Budget (₹)</label>
-        <input
-          type="number"
-          placeholder="Enter budget"
-          value={budget}
-          onChange={(e) => setBudget(e.target.value)}
-        />
-      </div>
+      <h1>Expense Tracker</h1>
 
-      {categories.map((cat) => (
-        <div className="card" key={cat}>
-          <h3>{cat}</h3>
-          <div className="row">
-            <span>Amount</span>
+      <div className="card">
+        {categories.map((cat) => (
+          <div key={cat} className="row">
+            <label>{cat}</label>
             <input
               type="number"
-              placeholder="₹"
               value={expenses[cat]}
-              onChange={(e) => handleChange(cat, e.target.value)}
+              onChange={(e) =>
+                setExpenses({ ...expenses, [cat]: e.target.value })
+              }
+              placeholder="₹"
             />
           </div>
-        </div>
-      ))}
-
-      <div className="summary">
-        <p>Daily Expense: ₹{dailyExpense}</p>
-        <p>Weekly Expense: ₹{weeklyExpense}</p>
-        <p>Balance: ₹{balance}</p>
+        ))}
       </div>
 
-      <button className="save-btn" onClick={saveData}>
-        Save to Database
+      <p className="total">Today Expense: ₹{totalToday}</p>
+
+      <button className="btn" onClick={saveData}>
+        Save
       </button>
+
+      <button className="btn view" onClick={() => setShowView(!showView)}>
+        View
+      </button>
+
+      {showView && (
+        <div className="view-box">
+          <p>Monthly Expense: ₹{monthlyExpense}</p>
+          <button className="btn" onClick={downloadExcel}>
+            Download Excel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
-export default App;
