@@ -1,74 +1,112 @@
 .container {
-  max-width: 420px;
+  max-width: 1100px;
   margin: auto;
-  padding: 20px;
-  position: relative;
+  padding: 30px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+/* Layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Cards */
+.card {
+  background: #1f1f1f;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #2d2d2d;
+}
+
+/* Labels */
+label {
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+/* Inputs */
+input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: white;
+}
+
+/* Day title */
+.day-title {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+/* Row */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.row span {
+  text-transform: capitalize;
+}
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+button.clear {
+  background: #4b4b4b;
+  color: white;
+}
+
+button.submit {
+  background: #f97316;
+  color: white;
+}
+
+/* Summary */
+.summary p {
+  margin: 8px 0;
+  font-weight: 500;
 }
 
 /* Date box */
 .date-box {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #111827;
+  top: 15px;
+  right: 20px;
+  background: #1f1f1f;
+  border: 1px solid #2d2d2d;
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
-  color: white;
-}
-
-/* Heading */
-h1 {
-  text-align: center;
-  margin-bottom: 15px;
-}
-
-/* Card */
-.card {
-  background: #0f172a;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 12px;
-  border: 1px solid white;
-}
-
-/* Rows */
-.row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.row span {
-  width: 80px;
-  text-transform: capitalize;
-}
-
-/* Inputs */
-input {
-  width: 120px;
-  padding: 6px;
-  background: transparent;
-  border: 1px solid white;
-  border-radius: 6px;
-  color: white;
-}
-
-/* Button */
-button {
-  width: 100%;
-  padding: 10px;
-  background: #5b21b6;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-/* Summary text */
-.summary p {
-  margin: 6px 0;
-  font-weight: bold;
+  color: #e5e7eb;
 }
