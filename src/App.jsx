@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "./supabase"; 
+import { supabase } from "./supabase";
 import "./App.css";
 
 const categories = ["Food", "Petrol", "Things", "Snacks"];
@@ -17,39 +17,24 @@ export default function App() {
   );
 
   const [showView, setShowView] = useState(false);
-  const [time, setTime] = useState("");
-
-  /* Live Time */
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        })
-      );
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const totalToday = Object.values(expenses).reduce(
     (a, b) => a + Number(b || 0),
     0
   );
 
+  const weeklyExpense = savedData
+    .slice(-7)
+    .reduce((sum, item) => sum + item.total, 0);
+
   const monthlyExpense = savedData.reduce(
     (sum, item) => sum + item.total,
     0
   );
 
-  /* ✅ SAVE TO SUPABASE + LOCAL */
   const saveData = async () => {
     const entry = {
       date: new Date().toLocaleDateString(),
-      time,
       food: Number(expenses.Food || 0),
       petrol: Number(expenses.Petrol || 0),
       things: Number(expenses.Things || 0),
@@ -57,33 +42,29 @@ export default function App() {
       total: totalToday,
     };
 
-    /* 🔹 Save to Supabase */
     const { error } = await supabase
       .from("daily_expenses")
       .insert([entry]);
 
     if (error) {
       alert("❌ Database error");
-      console.error(error);
       return;
     }
 
-    /* 🔹 Save locally (for Excel) */
     const updated = [...savedData, entry];
     setSavedData(updated);
     localStorage.setItem("expenses", JSON.stringify(updated));
 
     setExpenses({ Food: "", Petrol: "", Things: "", Snacks: "" });
-    alert("✅ Saved to Database");
+    alert("✅ Saved");
   };
 
-  /* ✅ DOWNLOAD EXCEL (CSV) */
   const downloadExcel = () => {
     let csv =
-      "Date,Time,Food,Petrol,Things,Snacks,Total\n";
+      "Date,Food,Petrol,Things,Snacks,Total\n";
 
     savedData.forEach((d) => {
-      csv += `${d.date},${d.time},${d.food},${d.petrol},${d.things},${d.snacks},${d.total}\n`;
+      csv += `${d.date},${d.food},${d.petrol},${d.things},${d.snacks},${d.total}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -96,7 +77,10 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="time-box">{time}</div>
+      {/* 🔝 Weekly Expense Box */}
+      <div className="weekly-box">
+        Weekly Expense: ₹{weeklyExpense}
+      </div>
 
       <h1>Expense Tracker</h1>
 
