@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
 
 const categories = ["food", "petrol", "things", "snacks"];
@@ -15,33 +15,17 @@ const dayNames = [
 function App() {
   const today = new Date();
   const todayName = dayNames[today.getDay()];
+  const todayDate = today.toLocaleDateString();
 
   const [budget, setBudget] = useState(0);
-  const [dateTime, setDateTime] = useState("");
+  const [viewMonthly, setViewMonthly] = useState(false);
+
   const [expenses, setExpenses] = useState({
     food: 0,
     petrol: 0,
     things: 0,
     snacks: 0,
   });
-
-  // Live Date & Time
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const date = now.toLocaleDateString();
-      const time = now.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "numeric",
-        hour12: true,
-      });
-      setDateTime(`${date} | ${time}`);
-    };
-
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleChange = (field, value) => {
     setExpenses({
@@ -50,24 +34,46 @@ function App() {
     });
   };
 
-  const dailyTotal =
+  const dailyExpense =
     expenses.food +
     expenses.petrol +
     expenses.things +
     expenses.snacks;
 
-  const weeklyExpense = dailyTotal;
+  const weeklyExpense = dailyExpense; // single day entry
   const balance = budget - weeklyExpense;
   const monthlyExpense = weeklyExpense * 4;
 
+  /* MONTHLY VIEW */
+  if (viewMonthly) {
+    return (
+      <div className="container">
+        <div className="date-box">{todayDate}</div>
+
+        <h1>📅 Monthly Expense</h1>
+
+        <div className="card summary">
+          <p>Monthly Expense: ₹{monthlyExpense}</p>
+        </div>
+
+        <button onClick={() => setViewMonthly(false)}>
+          ⬅ Back
+        </button>
+      </div>
+    );
+  }
+
+  /* DAILY VIEW */
   return (
     <div className="container">
-      <div className="datetime-box">{dateTime}</div>
+      <div className="date-box">{todayDate}</div>
 
       <h1>💰 Money Manager</h1>
 
       <div className="card">
-        <label className="budget-label">Weekly Budget (₹)</label>
+        <label style={{ fontWeight: "bold" }}>
+          Weekly Budget (₹)
+        </label>
         <input
           type="number"
           value={budget}
@@ -76,7 +82,7 @@ function App() {
       </div>
 
       <div className="card">
-        <h2 className="day-title">{todayName}</h2>
+        <h2>{todayName}</h2>
 
         {categories.map((cat) => (
           <div className="row" key={cat}>
@@ -89,15 +95,17 @@ function App() {
             />
           </div>
         ))}
-
-        <p><b>Today Total:</b> ₹{dailyTotal}</p>
       </div>
 
-      <div className="summary">
+      <div className="card summary">
+        <p>Daily Expense: ₹{dailyExpense}</p>
         <p>Weekly Expense: ₹{weeklyExpense}</p>
         <p>Balance: ₹{balance}</p>
-        <p>Monthly Expense: ₹{monthlyExpense}</p>
       </div>
+
+      <button onClick={() => setViewMonthly(true)}>
+        View Monthly Expense
+      </button>
     </div>
   );
 }
