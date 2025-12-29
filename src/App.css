@@ -1,112 +1,84 @@
 .container {
-  max-width: 1100px;
+  max-width: 420px;
   margin: auto;
-  padding: 30px;
+  padding: 20px;
+  position: relative;
 }
 
-/* Header */
-.header {
+/* Date */
+.date-box {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #1e1e1e;
+  border: 1px solid white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Title */
+h1 {
   text-align: center;
   margin-bottom: 20px;
 }
 
-.header h1 {
-  font-size: 28px;
-  font-weight: 600;
-}
-
-/* Layout */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-/* Cards */
+/* Card */
 .card {
-  background: #1f1f1f;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #2d2d2d;
-}
-
-/* Labels */
-label {
-  font-size: 14px;
-  color: #d1d5db;
+  background: #1a1a1a;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #333;
 }
 
 /* Inputs */
+label {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
 input {
   width: 100%;
   margin-top: 6px;
   padding: 10px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
+  background: transparent;
+  border: 1px solid white;
   border-radius: 6px;
   color: white;
 }
 
-/* Day title */
-.day-title {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-/* Row */
+/* Expense rows */
 .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin: 8px 0;
 }
 
 .row span {
   text-transform: capitalize;
 }
 
-/* Buttons */
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-button {
-  flex: 1;
-  padding: 12px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-button.clear {
-  background: #4b4b4b;
-  color: white;
-}
-
-button.submit {
-  background: #f97316;
-  color: white;
-}
-
-/* Summary */
+/* Summary text */
 .summary p {
   margin: 8px 0;
-  font-weight: 500;
+  font-size: 15px;
 }
 
-/* Date box */
-.date-box {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  background: #1f1f1f;
-  border: 1px solid #2d2d2d;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #e5e7eb;
+/* Button */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: #4c1d95; /* dark purple */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #5b21b6;
 }
