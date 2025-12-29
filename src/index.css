@@ -5,9 +5,9 @@
 }
 
 body {
-  background: #0b0b0b;
+  background: linear-gradient(135deg, #0f0f0f, #2a2a2a);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  color: #ffffff;
+  color: white;
   min-height: 100vh;
 }
