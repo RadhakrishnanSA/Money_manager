@@ -51,12 +51,31 @@ export default function App() {
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
-      const result = await getWeekData(weekId);
-      if (result.success && result.data) {
-        setWeekData(result.data);
-      } else {
-        // Initialize new week
+      try {
+        setLoading(true);
+        const result = await getWeekData(weekId);
+        if (result.success && result.data) {
+          setWeekData(result.data);
+        } else {
+          // Initialize new week
+          const initialData = {
+            weekStartDate: getWeekStart(today).toISOString().split("T")[0],
+            budgetHistory: [],
+            groceries: { amount: 0, lastUpdated: null },
+            expenses: {
+              food: [],
+              petrol: [],
+              things: [],
+              snacks: [],
+            },
+            allExpenses: [],
+          };
+          setWeekData(initialData);
+          await saveWeekData(weekId, initialData);
+        }
+      } catch (error) {
+        console.error("Error loading week data:", error);
+        // Still show UI even if Firebase fails
         const initialData = {
           weekStartDate: getWeekStart(today).toISOString().split("T")[0],
           budgetHistory: [],
@@ -70,9 +89,9 @@ export default function App() {
           allExpenses: [],
         };
         setWeekData(initialData);
-        await saveWeekData(weekId, initialData);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     loadData();
   }, [weekId]);

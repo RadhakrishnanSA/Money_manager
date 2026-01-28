@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/Money_manager/',
   css: {
-    postcss: null,
+    postcss: false,
   },
   server: {
     hmr: {
