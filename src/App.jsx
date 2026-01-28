@@ -1,8 +1,26 @@
 import { useState, useEffect } from "react";
-import { saveWeekData, getWeekData, updateWeekData } from "./firebase";
 import "./App.css";
 
 const categories = ["food", "petrol", "things", "snacks"];
+
+// Firebase imports with lazy loading
+let saveWeekData, getWeekData, updateWeekData;
+let firebaseLoaded = false;
+
+async function initFirebase() {
+  if (firebaseLoaded) return;
+  try {
+    const module = await import("./firebase");
+    saveWeekData = module.saveWeekData;
+    getWeekData = module.getWeekData;
+    updateWeekData = module.updateWeekData;
+    firebaseLoaded = true;
+    console.log("Firebase initialized successfully");
+  } catch (error) {
+    console.warn("Firebase not available, using local storage instead", error);
+    firebaseLoaded = true;
+  }
+}
 
 function getWeekStart(date = new Date()) {
   const d = new Date(date);
@@ -15,6 +33,27 @@ function getWeekId(date = new Date()) {
   const weekStart = getWeekStart(date);
   return weekStart.toISOString().split("T")[0];
 }
+
+// Local storage functions as fallback
+const saveToLocalStorage = (weekId, data) => {
+  try {
+    localStorage.setItem(`week_${weekId}`, JSON.stringify(data));
+    return { success: true };
+  } catch (e) {
+    console.error("Error saving to local storage:", e);
+    return { success: false };
+  }
+};
+
+const getFromLocalStorage = (weekId) => {
+  try {
+    const data = localStorage.getItem(`week_${weekId}`);
+    return { success: true, data: data ? JSON.parse(data) : null };
+  } catch (e) {
+    console.error("Error reading from local storage:", e);
+    return { success: true, data: null };
+  }
+};
 
 export default function App() {
   const today = new Date();
@@ -53,7 +92,24 @@ export default function App() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const result = await getWeekData(weekId);
+        await initFirebase();
+        
+        let result = { success: true, data: null };
+        
+        // Try Firebase first
+        if (firebaseLoaded && getWeekData) {
+          try {
+            result = await getWeekData(weekId);
+          } catch (e) {
+            console.log("Firebase failed, using local storage");
+          }
+        }
+        
+        // If Firebase didn't work, try local storage
+        if (!result.success || !result.data) {
+          result = getFromLocalStorage(weekId);
+        }
+        
         if (result.success && result.data) {
           setWeekData(result.data);
         } else {
@@ -71,11 +127,20 @@ export default function App() {
             allExpenses: [],
           };
           setWeekData(initialData);
-          await saveWeekData(weekId, initialData);
+          
+          // Try to save
+          if (firebaseLoaded && saveWeekData) {
+            try {
+              await saveWeekData(weekId, initialData);
+            } catch (e) {
+              saveToLocalStorage(weekId, initialData);
+            }
+          } else {
+            saveToLocalStorage(weekId, initialData);
+          }
         }
       } catch (error) {
         console.error("Error loading week data:", error);
-        // Still show UI even if Firebase fails
         const initialData = {
           weekStartDate: getWeekStart(today).toISOString().split("T")[0],
           budgetHistory: [],
@@ -130,7 +195,16 @@ export default function App() {
     ];
     const updated = { ...weekData, budgetHistory: newHistory };
     setWeekData(updated);
-    await updateWeekData(weekId, { budgetHistory: newHistory });
+    
+    if (firebaseLoaded && updateWeekData) {
+      try {
+        await updateWeekData(weekId, { budgetHistory: newHistory });
+      } catch (e) {
+        saveToLocalStorage(weekId, updated);
+      }
+    } else {
+      saveToLocalStorage(weekId, updated);
+    }
     setBudgetInput("");
   };
 
@@ -152,7 +226,16 @@ export default function App() {
     const newAllExpenses = [...weekData.allExpenses, { ...newExpense, category }];
     const updated = { ...weekData, expenses: newExpenses, allExpenses: newAllExpenses };
     setWeekData(updated);
-    await updateWeekData(weekId, { expenses: newExpenses, allExpenses: newAllExpenses });
+    
+    if (firebaseLoaded && updateWeekData) {
+      try {
+        await updateWeekData(weekId, { expenses: newExpenses, allExpenses: newAllExpenses });
+      } catch (e) {
+        saveToLocalStorage(weekId, updated);
+      }
+    } else {
+      saveToLocalStorage(weekId, updated);
+    }
     setExpenseInputs({ ...expenseInputs, [category]: "" });
   };
 
@@ -163,7 +246,16 @@ export default function App() {
     const newGroceries = { amount: newAmount, lastUpdated: todayString };
     const updated = { ...weekData, groceries: newGroceries };
     setWeekData(updated);
-    await updateWeekData(weekId, { groceries: newGroceries });
+    
+    if (firebaseLoaded && updateWeekData) {
+      try {
+        await updateWeekData(weekId, { groceries: newGroceries });
+      } catch (e) {
+        saveToLocalStorage(weekId, updated);
+      }
+    } else {
+      saveToLocalStorage(weekId, updated);
+    }
     setGroceriesInput("");
   };
 
@@ -181,7 +273,16 @@ export default function App() {
     );
     const updated = { ...weekData, expenses: updatedExpenses, allExpenses: updatedAllExpenses };
     setWeekData(updated);
-    await updateWeekData(weekId, { expenses: updatedExpenses, allExpenses: updatedAllExpenses });
+    
+    if (firebaseLoaded && updateWeekData) {
+      try {
+        await updateWeekData(weekId, { expenses: updatedExpenses, allExpenses: updatedAllExpenses });
+      } catch (e) {
+        saveToLocalStorage(weekId, updated);
+      }
+    } else {
+      saveToLocalStorage(weekId, updated);
+    }
     setEditingExpense(null);
     setEditValue("");
   };
@@ -195,10 +296,19 @@ export default function App() {
     const updatedAllExpenses = weekData.allExpenses.filter((exp) => exp.id !== expenseId);
     const updated = { ...weekData, expenses: updatedExpenses, allExpenses: updatedAllExpenses };
     setWeekData(updated);
-    await updateWeekData(weekId, { expenses: updatedExpenses, allExpenses: updatedAllExpenses });
+    
+    if (firebaseLoaded && updateWeekData) {
+      try {
+        await updateWeekData(weekId, { expenses: updatedExpenses, allExpenses: updatedAllExpenses });
+      } catch (e) {
+        saveToLocalStorage(weekId, updated);
+      }
+    } else {
+      saveToLocalStorage(weekId, updated);
+    }
   };
 
-  if (loading) return <div className="container"><p>Loading...</p></div>;
+  if (loading) return <div className="container" style={{ color: "white" }}><p>Loading...</p></div>;
 
   return (
     <div className="container">
