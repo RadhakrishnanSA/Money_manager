@@ -4,4 +4,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/Money_manager/',
+  css: {
+    postcss: null,
+  },
+  server: {
+    hmr: {
+      overlay: false,
+    },
+  },
 })
