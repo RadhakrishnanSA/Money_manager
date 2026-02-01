@@ -67,9 +67,9 @@ button:active { transform: scale(0.96); }
 #categoryChart, #dailyTrendChart { max-height: 300px; width: 100%; }
 `;
 
-const style = document.createElement('style');
-style.textContent = cssContent;
-document.head.appendChild(style);
+// const style = document.createElement('style');
+// style.textContent = cssContent;
+// document.head.appendChild(style);
 
 // Config
 const categories = ["groceries", "food", "snacks", "petrol", "things"];

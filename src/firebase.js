@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getDatabase, ref, set, get, update } from "firebase/database";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
 
 // New Firebase config provided by the user
 const firebaseConfig = {
