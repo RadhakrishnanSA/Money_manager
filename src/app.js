@@ -1,8 +1,17 @@
-// import './style.css'; // Disabled due to build error
+// import './style.css'; 
 import { saveWeekData, getWeekData, updateWeekData } from "./firebase.js";
-// Chart.js loaded via CDN
 
-// Inject CSS at runtime to avoid build pipeline issues
+// Global error handler for mobile debugging
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+    const log = document.getElementById('debug-log');
+    if (log) {
+        log.style.display = 'block';
+        log.innerHTML += `ERROR: ${msg} at ${lineNo}:${columnNo}<br>`;
+    }
+    return false;
+};
+
+// Inject CSS at runtime
 const cssContent = `
 :root { --bg-dark: #09090b; --glass-bg: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.08); --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%); --accent-color: #a78bfa; --text-primary: #ffffff; --text-secondary: #a1a1aa; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -62,24 +71,13 @@ const style = document.createElement('style');
 style.textContent = cssContent;
 document.head.appendChild(style);
 
-
 // Config
 const categories = ["groceries", "food", "snacks", "petrol", "things"];
 let weekData = {
     weekStartDate: "",
     budgetHistory: [],
-    expenses: {
-        groceries: [],
-        food: [],
-        petrol: [],
-        things: [],
-        snacks: [],
-    },
+    expenses: { groceries: [], food: [], petrol: [], things: [], snacks: [] },
 };
-
-// Global Chart Instances
-let categoryChartInstance = null;
-let trendChartInstance = null;
 
 // Date Helpers
 const today = new Date();
@@ -88,28 +86,22 @@ const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 const dayOfWeek = dayNames[today.getDay()];
 const weekId = getWeekId(today);
 
-// --- Helper Functions ---
-
-function getWeekStart(date = new Date()) {
+// Helpers
+function getWeekStart(date) {
     const d = new Date(date);
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     return new Date(d.setDate(diff));
 }
 
-function getWeekId(date = new Date()) {
+function getWeekId(date) {
     const weekStart = getWeekStart(date);
     return weekStart.toISOString().split("T")[0];
 }
 
 const saveToLocalStorage = (weekId, data) => {
-    try {
-        localStorage.setItem(`week_${weekId}`, JSON.stringify(data));
-        return { success: true };
-    } catch (e) {
-        console.error("Error saving to local storage:", e);
-        return { success: false };
-    }
+    try { localStorage.setItem(`week_${weekId}`, JSON.stringify(data)); return { success: true }; }
+    catch (e) { console.error(e); return { success: false }; }
 };
 
 const getFromLocalStorage = (weekId) => {
@@ -117,78 +109,84 @@ const getFromLocalStorage = (weekId) => {
         const data = localStorage.getItem(`week_${weekId}`);
         return { success: true, data: data ? JSON.parse(data) : null };
     } catch (e) {
-        console.error("Error reading from local storage:", e);
+        console.error(e);
         return { success: true, data: null };
     }
 };
 
-// --- Data Logic ---
+// Initial Render Logic (Immediate)
+function initializeDefaults() {
+    const initialData = {
+        weekStartDate: getWeekStart(today).toISOString().split("T")[0],
+        budgetHistory: [],
+        expenses: { groceries: [], food: [], petrol: [], things: [], snacks: [] },
+    };
 
-async function init() {
-    // Show Date
+    // Try local storage first
+    const local = getFromLocalStorage(weekId);
+    if (local.success && local.data) {
+        // Migration check
+        if (local.data.groceries && !Array.isArray(local.data.groceries)) {
+            local.data.expenses.groceries = [];
+            delete local.data.groceries;
+        }
+        weekData = local.data;
+    } else {
+        weekData = initialData;
+        saveToLocalStorage(weekId, initialData);
+    }
+
+    // Fix Categories
+    categories.forEach(cat => {
+        if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
+    });
+
     const dateDisplay = document.getElementById("date-display");
     if (dateDisplay) dateDisplay.textContent = todayString;
-
     const dayDisplay = document.getElementById("day-display");
     if (dayDisplay) dayDisplay.textContent = dayOfWeek;
 
-    // Load Data
-    let result = { success: true, data: null };
-    try {
-        result = await getWeekData(weekId);
-    } catch (e) {
-        console.log("Firebase failed, using local storage");
-    }
-
-    if (!result.success || !result.data) {
-        result = getFromLocalStorage(weekId);
-    }
-
-    if (result.success && result.data) {
-        weekData = result.data;
-        // Ensure all categories exist
-        categories.forEach(cat => {
-            if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
-        });
-        if (weekData.groceries && !Array.isArray(weekData.groceries)) {
-            // Migration fix: wipe old object groceries if present
-            weekData.expenses.groceries = [];
-            delete weekData.groceries;
-        }
-    } else {
-        // Initialize new week
-        const initialData = {
-            weekStartDate: getWeekStart(today).toISOString().split("T")[0],
-            budgetHistory: [],
-            expenses: {
-                groceries: [],
-                food: [],
-                petrol: [],
-                things: [],
-                snacks: [],
-            },
-        };
-        weekData = initialData;
-        persistData(initialData, true);
-    }
-
-    render();
+    render(); // Initial Render
 }
 
-async function persistData(data, forceSave = false) {
+async function init() {
+    initializeDefaults(); // Render defaults/local first
+
+    // Then try sync with Firebase
+    try {
+        const result = await getWeekData(weekId);
+        if (result.success && result.data) {
+            weekData = result.data;
+            // Ensure schema
+            categories.forEach(cat => {
+                if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
+            });
+            if (weekData.groceries && !Array.isArray(weekData.groceries)) {
+                weekData.expenses.groceries = [];
+                delete weekData.groceries;
+            }
+            render(); // Re-render with cloud data
+        }
+    } catch (e) {
+        console.warn("Firebase sync failed:", e);
+    }
+}
+
+// Persist
+async function persistData(data) {
+    // Save to LocalStorage immediately
+    saveToLocalStorage(weekId, weekData);
+
+    // Try Cloud
     try {
         await updateWeekData(weekId, data);
     } catch (e) {
-        saveToLocalStorage(weekId, data);
+        console.warn("Cloud save failed:", e);
     }
 }
 
-// --- Calculations ---
-
-const getTotalBudget = () => {
-    return (weekData.budgetHistory || []).reduce((sum, item) => sum + item.amount, 0);
-};
-
+// Calculations
+const getTotalBudget = () => (weekData.budgetHistory || []).reduce((sum, item) => sum + item.amount, 0);
 const getTotalExpenses = () => {
     let total = 0;
     categories.forEach((cat) => {
@@ -196,312 +194,118 @@ const getTotalExpenses = () => {
     });
     return total;
 };
-
-const getBalance = () => {
-    return getTotalBudget() - getTotalExpenses();
-};
-
+const getBalance = () => getTotalBudget() - getTotalExpenses();
 const getStatusColor = () => {
-    const balance = getBalance();
-    const budget = getTotalBudget();
-    if (budget === 0) return "white";
-    return balance < 0 ? "red" : balance < budget * 0.1 ? "gold" : "green";
+    const bal = getBalance();
+    const bud = getTotalBudget();
+    if (bud === 0) return "white";
+    return bal < 0 ? "red" : bal < bud * 0.1 ? "gold" : "green";
 };
 
-// --- Rendering ---
-
+// Render
 function render() {
-    renderWeeklyView();
-    // Re-render charts/timeline if visible? 
-    if (document.getElementById("timeline-view").style.display === "block") renderTimeline();
-    if (document.getElementById("analytics-view").style.display === "block") renderCharts();
-}
+    try {
+        const totalBudget = getTotalBudget();
+        const statusColor = getStatusColor();
 
-function renderWeeklyView() {
-    // Budget
-    const totalBudget = getTotalBudget();
-    const statusColor = getStatusColor();
-    const budgetEl = document.getElementById("total-budget-display");
-    if (budgetEl) {
-        budgetEl.textContent = `₹ ${totalBudget}`;
-        budgetEl.className = statusColor;
-    }
+        // Summary Header
+        const budgetEl = document.getElementById("total-budget-display");
+        if (budgetEl) {
+            budgetEl.textContent = `₹ ${totalBudget}`;
+            budgetEl.className = statusColor;
+        }
 
-    // Expenses Grid
-    const gridEl = document.getElementById("expense-grid");
-    if (gridEl) {
-        gridEl.innerHTML = "";
-        categories.forEach(cat => {
-            const box = document.createElement("div");
-            box.className = "expense-box";
+        // Summary Section
+        const sumBudget = document.getElementById("summary-budget");
+        if (sumBudget) sumBudget.textContent = `₹${totalBudget}`;
+        const sumExp = document.getElementById("summary-expenses");
+        if (sumExp) sumExp.textContent = `₹${getTotalExpenses()}`;
+        const sumBal = document.getElementById("summary-balance");
+        if (sumBal) {
+            sumBal.textContent = `Balance: ₹${getBalance()}`;
+            sumBal.className = `balance ${statusColor}`;
+        }
 
-            // Calculate total for this category
-            const catTotal = (weekData.expenses[cat] || []).reduce((sum, e) => sum + e.amount, 0);
+        // Expense Grid
+        const gridEl = document.getElementById("expense-grid");
+        if (gridEl) {
+            gridEl.innerHTML = "";
+            categories.forEach(cat => {
+                const box = document.createElement("div");
+                box.className = "expense-box";
+                const catTotal = (weekData.expenses[cat] || []).reduce((sum, e) => sum + e.amount, 0);
 
-            // Header & Input
-            box.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h4>${cat}</h4>
-                    <span style="font-size:12px; opacity:0.7;">₹${catTotal}</span>
-                </div>
-                <div class="add-input-group">
-                    <input type="number" placeholder="+₹" id="input-${cat}">
-                    <button id="btn-add-${cat}">Add</button>
-                </div>
-                <div class="expense-list" id="list-${cat}"></div>
-            `;
+                box.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h4>${cat}</h4>
+                        <span style="font-size:12px; opacity:0.7;">₹${catTotal}</span>
+                    </div>
+                    <div class="add-input-group">
+                        <input type="number" placeholder="+₹" id="input-${cat}">
+                        <button class="add-btn-dynamic" data-cat="${cat}">Add</button>
+                    </div>
+                    <div class="expense-list" id="list-${cat}"></div>
+                `;
+                gridEl.appendChild(box);
 
-            gridEl.appendChild(box);
+                // List
+                const listEl = box.querySelector(`#list-${cat}`);
+                const recentItems = (weekData.expenses[cat] || []).slice().reverse().slice(0, 5);
 
-            // Add Event Listener
-            const btn = box.querySelector(`#btn-add-${cat}`);
-            if (btn) btn.addEventListener("click", () => handleAddExpense(cat));
-
-            const inp = box.querySelector(`#input-${cat}`);
-            if (inp) inp.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") handleAddExpense(cat);
-            });
-
-            // List Items (Recent 5)
-            const listEl = box.querySelector(`#list-${cat}`);
-            const recentItems = (weekData.expenses[cat] || []).slice().reverse().slice(0, 5);
-
-            recentItems.forEach(exp => {
-                const item = document.createElement("div");
-
-                // Check if it's being edited
-                if (window.editingExpense && window.editingExpense.id === exp.id && window.editingExpense.category === cat) {
-                    item.className = "expense-item";
-                    item.innerHTML = `
-                        <div class="edit-input-group">
-                            <input type="number" value="${window.editValue}" id="edit-val-${exp.id}">
-                            <button id="save-${exp.id}">Save</button>
-                            <button id="cancel-${exp.id}">Cancel</button>
-                        </div>
-                    `;
-                    listEl.appendChild(item);
-
-                    document.getElementById(`save-${exp.id}`).addEventListener('click', () => handleSaveEdit(cat, exp.id));
-                    document.getElementById(`cancel-${exp.id}`).addEventListener('click', () => {
-                        window.editingExpense = null;
-                        render();
-                    });
-                    document.getElementById(`edit-val-${exp.id}`).addEventListener('input', (e) => {
-                        window.editValue = e.target.value;
-                    });
-
-                } else {
+                recentItems.forEach(exp => {
+                    const item = document.createElement("div");
                     item.className = "expense-item";
                     item.innerHTML = `
                         <div>
-                          <span style="font-size:11px; color:#aaa; margin-right:5px;">${exp.day.substring(0, 3)}</span>
-                          <span>${exp.time}</span>
-                          <span class="expense-amount">₹${exp.amount}</span>
-                        </div>
-                        <div class="expense-actions">
-                          <button class="edit-btn" data-id="${exp.id}" data-cat="${cat}">✎</button>
-                          <button class="delete-btn" data-id="${exp.id}" data-cat="${cat}">✕</button>
-                        </div>
+                           <span style="font-size:11px; color:#aaa; margin-right:5px;">${exp.day.substring(0, 3)}</span>
+                           <span>${exp.time}</span>
+                           <span class="expense-amount">₹${exp.amount}</span>
+                         </div>
+                         <div class="expense-actions">
+                           <button class="delete-btn" data-id="${exp.id}" data-cat="${cat}">✕</button>
+                         </div>
                     `;
                     listEl.appendChild(item);
+                });
+            });
+
+            // Bind Events (Delegation)
+            gridEl.onclick = (e) => {
+                const addBtn = e.target.closest('.add-btn-dynamic');
+                if (addBtn) {
+                    const cat = addBtn.dataset.cat;
+                    handleAddExpense(cat);
+                }
+                const delBtn = e.target.closest('.delete-btn');
+                if (delBtn) {
+                    const cat = delBtn.dataset.cat;
+                    const id = Number(delBtn.dataset.id);
+                    if (confirm("Delete?")) handleDeleteExpense(cat, id);
+                }
+            };
+
+            // Keypress via direct attachment
+            categories.forEach(cat => {
+                const inp = document.getElementById(`input-${cat}`);
+                if (inp) inp.onkeypress = (e) => {
+                    if (e.key === 'Enter') handleAddExpense(cat);
                 }
             });
-        });
-
-        // Add global event delegation for dynamic buttons if preferred, but adding per-loop works too.
-        // Re-attaching listeners for buttons inside grid
-        gridEl.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Ensure target is the button
-                const target = e.target.closest('.edit-btn');
-                const id = Number(target.getAttribute('data-id'));
-                const cat = target.getAttribute('data-cat');
-                const exp = weekData.expenses[cat].find(x => x.id === id);
-                if (exp) {
-                    window.editingExpense = { id, category: cat };
-                    window.editValue = exp.amount;
-                    render();
-                }
-            });
-        });
-
-        gridEl.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.target.closest('.delete-btn');
-                const id = Number(target.getAttribute('data-id'));
-                const cat = target.getAttribute('data-cat');
-                if (confirm("Delete this expense?")) {
-                    handleDeleteExpense(cat, id);
-                }
-            });
-        });
-    }
-
-    // Summary
-    const summaryBudget = document.getElementById("summary-budget");
-    const summaryExpenses = document.getElementById("summary-expenses");
-    const summaryBalance = document.getElementById("summary-balance");
-    if (summaryBudget) {
-        summaryBudget.textContent = `₹${totalBudget}`;
-        summaryExpenses.textContent = `₹${getTotalExpenses()}`;
-        summaryBalance.textContent = `Balance: ₹${getBalance()}`;
-        summaryBalance.className = `balance ${statusColor}`;
+        }
+    } catch (err) {
+        console.error("Render Error:", err);
     }
 }
 
-function renderTimeline() {
-    const listEl = document.getElementById("timeline-container");
-    if (!listEl) return;
-    listEl.innerHTML = "";
-
-    // Collect all expenses
-    let allExpenses = [];
-    categories.forEach(cat => {
-        if (weekData.expenses[cat]) {
-            weekData.expenses[cat].forEach(exp => {
-                allExpenses.push({ ...exp, category: cat });
-            });
-        }
-    });
-
-    // Sort by timestamp (id is timestamp) => Descending
-    allExpenses.sort((a, b) => b.id - a.id);
-
-    if (allExpenses.length === 0) {
-        listEl.innerHTML = "<p style='text-align:center; opacity:0.5'>No history yet.</p>";
-        return;
-    }
-
-    // Group by Date
-    let currentDate = "";
-
-    allExpenses.forEach(exp => {
-        if (exp.date !== currentDate) {
-            currentDate = exp.date;
-            const dateHeader = document.createElement("h4");
-            dateHeader.textContent = currentDate === todayString ? "Today" : currentDate;
-            dateHeader.style.marginTop = "20px";
-            dateHeader.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
-            listEl.appendChild(dateHeader);
-        }
-
-        const div = document.createElement("div");
-        div.className = "expense-item";
-        div.innerHTML = `
-            <div style="flex-direction:column; align-items:flex-start; gap:2px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                     <span class="category-badge">${exp.category}</span>
-                     <span class="expense-amount">₹${exp.amount}</span>
-                </div>
-                <span style="font-size:11px; opacity:0.5;">${exp.time}</span>
-            </div>
-             <div class="expense-actions">
-                <button class="delete-btn" id="del-t-${exp.id}">✕</button>
-            </div>
-        `;
-        listEl.appendChild(div);
-
-        div.querySelector(`#del-t-${exp.id}`).addEventListener("click", () => {
-            if (confirm("Delete this?")) handleDeleteExpense(exp.category, exp.id);
-        });
-    });
-}
-
-
-function renderCharts() {
-    if (typeof Chart === 'undefined') return;
-
-    // 1. Category Chart
-    const cvsCat = document.getElementById('categoryChart');
-    if (!cvsCat) return;
-
-    // Destroy previous instance
-    if (categoryChartInstance) {
-        categoryChartInstance.destroy();
-    }
-
-    const catTotals = categories.map(cat => {
-        return (weekData.expenses[cat] || []).reduce((sum, e) => sum + e.amount, 0);
-    });
-
-    categoryChartInstance = new Chart(cvsCat.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: categories.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
-            datasets: [{
-                data: catTotals,
-                backgroundColor: [
-                    '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#3b82f6'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom', labels: { color: 'white' } }
-            }
-        }
-    });
-
-    // 2. Daily Trend Chart
-    const cvsTrend = document.getElementById('dailyTrendChart');
-    if (!cvsTrend) return;
-    if (trendChartInstance) trendChartInstance.destroy();
-
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const dailyTotals = days.map(day => {
-        let sum = 0;
-        categories.forEach(cat => {
-            (weekData.expenses[cat] || []).forEach(exp => {
-                if (exp.day === day) sum += exp.amount;
-            });
-        });
-        return sum;
-    });
-
-    trendChartInstance = new Chart(cvsTrend.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: days.map(d => d.substring(0, 3)),
-            datasets: [{
-                label: 'Spending',
-                data: dailyTotals,
-                backgroundColor: '#a78bfa',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } },
-                x: { grid: { display: false }, ticks: { color: '#aaa' } }
-            },
-            plugins: {
-                legend: { display: false }
-            }
-        }
-    });
-}
-
-// --- Actions ---
-
+// Handlers
 async function handleAddBudget() {
     const input = document.getElementById("budget-input");
     const val = input.value;
     if (!val || isNaN(val)) return;
-
-    const newHistory = [
-        ...weekData.budgetHistory,
-        { amount: Number(val), date: todayString, type: "add" },
-    ];
-
-    // Optimistic Update
+    const newHistory = [...weekData.budgetHistory, { amount: Number(val), date: todayString, type: "add" }];
     weekData.budgetHistory = newHistory;
     input.value = "";
     render();
-
-    // Save
     await persistData({ budgetHistory: newHistory });
 }
 
@@ -510,100 +314,71 @@ async function handleAddExpense(category) {
     const val = input.value;
     if (!val || isNaN(val)) return;
 
-    const amount = Number(val);
     const newExpense = {
         id: Date.now(),
-        amount,
+        amount: Number(val),
         date: todayString,
         day: dayOfWeek,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    const newCatExpenses = [...(weekData.expenses[category] || []), newExpense];
-
-    // Update local state
-    weekData.expenses = {
-        ...weekData.expenses,
-        [category]: newCatExpenses
-    };
+    // Update State
+    weekData.expenses[category] = [...(weekData.expenses[category] || []), newExpense];
 
     input.value = "";
     render();
-
-    // Persist
     await persistData({ expenses: weekData.expenses });
 }
 
-async function handleSaveEdit(category, expenseId) {
-    const newAmount = window.editValue;
-    if (!newAmount || isNaN(newAmount)) return;
-
-    const updatedList = weekData.expenses[category].map((exp) =>
-        exp.id === expenseId ? { ...exp, amount: Number(newAmount) } : exp
-    );
-
-    weekData.expenses = {
-        ...weekData.expenses,
-        [category]: updatedList
-    };
-    window.editingExpense = null;
-
+async function handleDeleteExpense(category, id) {
+    weekData.expenses[category] = weekData.expenses[category].filter(e => e.id !== id);
     render();
     await persistData({ expenses: weekData.expenses });
 }
 
-async function handleDeleteExpense(category, expenseId) {
-    const updatedList = weekData.expenses[category].filter((exp) => exp.id !== expenseId);
-
-    weekData.expenses = {
-        ...weekData.expenses,
-        [category]: updatedList
-    };
-
-    render();
-    await persistData({ expenses: weekData.expenses });
-}
-
-// --- Setup Global Listeners ---
-
-const btnBudget = document.getElementById("add-budget-btn");
-if (btnBudget) {
-    btnBudget.addEventListener("click", handleAddBudget);
-}
-const inpBudget = document.getElementById("budget-input");
-if (inpBudget) {
-    inpBudget.addEventListener("keypress", (e) => {
-        if (e.key === 'Enter') handleAddBudget();
-    });
-}
-
-// View Switching
-const views = ["weekly-view", "timeline-view", "analytics-view", "monthly-view"];
-const showView = (viewId) => {
-    views.forEach(v => {
+// Nav
+const showView = (id) => {
+    ["weekly-view", "timeline-view", "analytics-view"].forEach(v => {
         const el = document.getElementById(v);
-        if (el) el.style.display = (v === viewId) ? "block" : "none";
+        if (el) el.style.display = (v === id) ? "block" : "none";
     });
-    window.scrollTo(0, 0);
 };
 
-// Bind nav buttons
-const bindNav = (id, view) => {
+// Expose to window for HTML access
+window.handleAddBudget = handleAddBudget;
+window.handleAddExpense = handleAddExpense;
+window.handleDeleteExpense = handleDeleteExpense;
+window.delT = (c, i) => { if (confirm("Delete?")) handleDeleteExpense(c, i); };
+window.showView = showView;
+window.renderTimeline = renderTimeline;
+window.renderCharts = renderCharts;
+
+// Global Click Listener for Debugging
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn) {
+        console.log("Clicked:", btn);
+        const log = document.getElementById('debug-log');
+        if (log) log.innerHTML += `Clicked ${btn.innerText || btn.className}<br>`;
+    }
+});
+
+// Bind Static Buttons just in case
+const bindBtn = (id, fn) => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener("click", () => {
-        showView(view);
-        if (view === 'timeline-view') renderTimeline();
-        if (view === 'analytics-view') renderCharts();
-    });
+    if (el) el.addEventListener('click', fn);
 };
 
-bindNav("go-to-timeline-btn", "timeline-view");
-bindNav("go-to-analytics-btn", "analytics-view");
-bindNav("go-to-monthly-btn", "monthly-view"); // Fallback view
+bindBtn("add-budget-btn", handleAddBudget);
+bindBtn("go-to-timeline-btn", () => { showView("timeline-view"); renderTimeline(); });
+bindBtn("go-to-analytics-btn", () => { showView("analytics-view"); renderCharts(); });
+bindBtn("back-from-timeline", () => showView("weekly-view"));
+bindBtn("back-from-analytics", () => showView("weekly-view"));
+bindBtn("back-to-weekly-btn", () => showView("weekly-view"));
 
-bindNav("back-from-timeline", "weekly-view");
-bindNav("back-from-analytics", "weekly-view");
-bindNav("back-to-weekly-btn", "weekly-view");
+// Keyboard support
+const budgetInp = document.getElementById("budget-input");
+if (budgetInp) budgetInp.onkeypress = (e) => { if (e.key === 'Enter') handleAddBudget(); };
 
 // Start
 init();
