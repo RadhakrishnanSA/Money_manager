@@ -1,5 +1,4 @@
-// import './style.css'; 
-import { saveWeekData, getWeekData, updateWeekData } from "./firebase.js";
+// Imports checked
 
 // Global error handler for mobile debugging
 window.onerror = function (msg, url, lineNo, columnNo, error) {
