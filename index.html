@@ -4,83 +4,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Money Manager</title>
+  <title>Money Management</title>
+
+  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart JS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="src/style.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <!-- Debug Overlay -->
+  <!-- Debug Overlay (Hidden by default) -->
   <div id="debug-log"
     style="display:none; position:fixed; bottom:0; left:0; right:0; height:100px; background:rgba(0,0,0,0.9); color:lime; font-family:monospace; font-size:10px; overflow:auto; padding:5px; z-index:9999;">
   </div>
 
   <div class="container">
+
+    <!-- Top Bar -->
     <div class="date-box">
-      <span id="date-display"></span>
-      <span id="day-display" style="margin-left: 10px"></span>
+      <span id="date-display">...</span>
+      <span id="day-display" style="margin-left: 10px">...</span>
     </div>
 
     <h1>💰 Money Management</h1>
 
-    <!-- Weekly View -->
+    <!-- VIEW: Weekly Dashboard -->
     <div id="weekly-view">
-      <!-- Budget -->
+
+      <!-- Budget Section -->
       <div class="section">
         <h3>Weekly Budget</h3>
         <div class="week-box">
           <h2 id="total-budget-display">₹ 0</h2>
         </div>
         <div class="add-input-group">
-          <input type="number" id="budget-input" placeholder="Add amount ₹">
-          <button id="add-budget-btn">Add</button>
+          <input type="number" id="budget-input" placeholder="Amount ₹">
+          <button onclick="handleAddBudget()">Add</button>
         </div>
       </div>
 
-      <!-- Groceries integrated into Expense Grid -->
-
-      <!-- Expenses -->
+      <!-- Expense Grid Section -->
       <div class="section">
-        <h3>Daily Expenses</h3>
+        <h3>Expenses</h3>
         <div class="expense-grid" id="expense-grid">
-          <!-- Categories injected here -->
+          <!-- Dynamic Content -->
+          <p style="text-align:center; opacity:0.5;">Loading...</p>
         </div>
       </div>
 
-      <!-- Summary -->
+      <!-- Summary Section -->
       <div class="section summary-section">
-        <h3>Weekly Summary</h3>
+        <h3>Summary</h3>
         <div class="summary">
-          <p>Total Budget: <span id="summary-budget">₹0</span></p>
-          <p>Total Expenses: <span id="summary-expenses">₹0</span></p>
+          <p>Budget: <span id="summary-budget">₹0</span></p>
+          <p>Spent: <span id="summary-expenses">₹0</span></p>
           <p class="balance" id="summary-balance">Balance: ₹0</p>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-          <button class="view-btn" id="go-to-timeline-btn" style="margin-top:0;">📝 Timeline</button>
-          <button class="view-btn" id="go-to-analytics-btn" style="margin-top:0;">📈 Analytics</button>
-        </div>
-        <!-- <button class="view-btn" id="go-to-monthly-btn" style="margin-top: 10px; background: rgba(255,255,255,0.05); color: #ccc;">📊 Old View</button> -->
-      </div>
-    </div>
 
-    <!-- Timeline View -->
+        <!-- Navigation -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+          <button class="view-btn" onclick="showView('timeline-view')" style="margin-top:0;">📝 Timeline</button>
+          <button class="view-btn" onclick="showView('analytics-view')" style="margin-top:0;">📈 Analytics</button>
+        </div>
+      </div>
+
+    </div>
+    <!-- END Weekly View -->
+
+    <!-- VIEW: Timeline -->
     <div id="timeline-view" style="display: none;">
       <div class="header-back">
-        <button class="back-btn" id="back-from-timeline">← Back</button>
+        <button class="back-btn" onclick="showView('weekly-view')">← Back</button>
         <h2>History</h2>
       </div>
       <div class="section" id="timeline-container">
-        <!-- Injected Transactions -->
+        <!-- Dynamic -->
       </div>
     </div>
 
-    <!-- Analytics View -->
+    <!-- VIEW: Analytics -->
     <div id="analytics-view" style="display: none;">
       <div class="header-back">
-        <button class="back-btn" id="back-from-analytics">← Back</button>
+        <button class="back-btn" onclick="showView('weekly-view')">← Back</button>
         <h2>Analytics</h2>
       </div>
 
@@ -90,42 +101,24 @@
       </div>
 
       <div class="section">
-        <h3>Daily Spending Trend</h3>
+        <h3>Spending Trend</h3>
         <canvas id="dailyTrendChart"></canvas>
       </div>
     </div>
 
-    <!-- Monthly View -->
+    <!-- VIEW: Monthly (Placeholder/Future) -->
     <div id="monthly-view" style="display: none;">
       <div class="header-back">
-        <button class="back-btn" id="back-to-weekly-btn">← Back</button>
-        <h2>All Expenses</h2>
+        <button class="back-btn" onclick="showView('weekly-view')">← Back</button>
+        <h2>Monthly</h2>
       </div>
-
-      <div class="section">
-        <div class="summary">
-          <p>Total Budget: <span id="monthly-summary-budget">₹0</span></p>
-          <p>Total Expenses: <span id="monthly-summary-expenses">₹0</span></p>
-          <p class="balance" id="monthly-summary-balance">Balance: ₹0</p>
-        </div>
-      </div>
-
-      <div class="section">
-        <h3>Expense Details</h3>
-        <div class="expense-details" id="all-expenses-list">
-          <!-- List injected here -->
-        </div>
-      </div>
-
-      <div class="section">
-        <h3>Category Breakdown</h3>
-        <div id="category-breakdown">
-          <!-- Injected here -->
-        </div>
-      </div>
+      <p style="text-align:center; opacity:0.5; padding:40px;">Coming Soon</p>
     </div>
+
   </div>
-  <script type="module" src="src/app.js"></script>
+
+  <!-- App Script (Module) -->
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>
