@@ -7,9 +7,9 @@
   <title>Money Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Money_manager/assets/index-BjrHQFwa.js"></script>
-  <link rel="stylesheet" crossorigin href="/Money_manager/assets/index-BW1cA-oq.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" crossorigin src="/Money_manager/assets/index-DViSlku3.js"></script>
 </head>
 
 <body>
@@ -35,18 +35,7 @@
         </div>
       </div>
 
-      <!-- Groceries -->
-      <div class="section">
-        <h3>Groceries (Constant All Week)</h3>
-        <div class="week-box">
-          <h2 id="groceries-display">₹ 0</h2>
-          <p id="groceries-last-updated" style="font-size: 12px; opacity: 0.7"></p>
-        </div>
-        <div class="add-input-group">
-          <input type="number" id="groceries-input" placeholder="Add amount ₹">
-          <button id="add-groceries-btn">Add</button>
-        </div>
-      </div>
+      <!-- Groceries integrated into Expense Grid -->
 
       <!-- Expenses -->
       <div class="section">
@@ -64,7 +53,40 @@
           <p>Total Expenses: <span id="summary-expenses">₹0</span></p>
           <p class="balance" id="summary-balance">Balance: ₹0</p>
         </div>
-        <button class="view-btn" id="go-to-monthly-btn">📊 View All Data</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+          <button class="view-btn" id="go-to-timeline-btn" style="margin-top:0;">📝 Timeline</button>
+          <button class="view-btn" id="go-to-analytics-btn" style="margin-top:0;">📈 Analytics</button>
+        </div>
+        <!-- <button class="view-btn" id="go-to-monthly-btn" style="margin-top: 10px; background: rgba(255,255,255,0.05); color: #ccc;">📊 Old View</button> -->
+      </div>
+    </div>
+
+    <!-- Timeline View -->
+    <div id="timeline-view" style="display: none;">
+      <div class="header-back">
+        <button class="back-btn" id="back-from-timeline">← Back</button>
+        <h2>History</h2>
+      </div>
+      <div class="section" id="timeline-container">
+        <!-- Injected Transactions -->
+      </div>
+    </div>
+
+    <!-- Analytics View -->
+    <div id="analytics-view" style="display: none;">
+      <div class="header-back">
+        <button class="back-btn" id="back-from-analytics">← Back</button>
+        <h2>Analytics</h2>
+      </div>
+
+      <div class="section">
+        <h3>Category Breakdown</h3>
+        <canvas id="categoryChart"></canvas>
+      </div>
+
+      <div class="section">
+        <h3>Daily Spending Trend</h3>
+        <canvas id="dailyTrendChart"></canvas>
       </div>
     </div>
 
