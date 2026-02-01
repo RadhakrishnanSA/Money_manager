@@ -317,6 +317,22 @@ window.handleAddBudget = async () => {
     await persistData({ budgetHistory: newHistory });
 };
 
+window.handleSetBudget = async () => {
+    const input = document.getElementById("budget-input");
+    const val = input.value;
+    if (!val || isNaN(val)) return;
+
+    if (!confirm("This will overwrite the current weekly budget total. Continue?")) return;
+
+    // Set logic: Replace history with a single 'set' entry
+    const newHistory = [{ amount: Number(val), date: todayString, type: "set" }];
+    weekData.budgetHistory = newHistory;
+    input.value = "";
+
+    render();
+    await persistData({ budgetHistory: newHistory });
+};
+
 window.handleAddExpense = async (category) => {
     const input = document.getElementById(`input-${category}`);
     const val = input.value;
