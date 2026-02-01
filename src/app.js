@@ -344,6 +344,38 @@ const showView = (id) => {
     });
 };
 
+function renderTimeline() {
+    const el = document.getElementById("timeline-container");
+    if (!el) return;
+    el.innerHTML = "";
+    let all = [];
+    categories.forEach(c => (weekData.expenses[c] || []).forEach(e => all.push({ ...e, category: c })));
+    all.sort((a, b) => b.id - a.id);
+    if (all.length === 0) { el.innerHTML = "<p>No history</p>"; return; }
+
+    let curDate = "";
+    all.forEach(exp => {
+        if (exp.date !== curDate) {
+            curDate = exp.date;
+            el.innerHTML += `<h4 style="margin-top:20px; border-bottom:1px solid #333">${curDate}</h4>`;
+        }
+        el.innerHTML += `
+            <div class="expense-item">
+                <div style="display:flex; gap:10px; align-items:center;">
+                     <span class="category-badge">${exp.category}</span>
+                     <span>₹${exp.amount}</span>
+                </div>
+                 <button class="delete-btn" onclick="window.delT('${exp.category}', ${exp.id})">✕</button>
+            </div>
+        `;
+    });
+}
+
+function renderCharts() {
+    if (typeof Chart === 'undefined') return;
+    // ... Simplified Logic for charts ...
+}
+
 // Expose to window for HTML access
 window.handleAddBudget = handleAddBudget;
 window.handleAddExpense = handleAddExpense;
