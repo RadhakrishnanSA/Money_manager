@@ -3,6 +3,9 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase
 import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
 
 // New Firebase config provided by the user
+// SECURITY NOTE: This API key is visible to the client. 
+// You must set up "HTTP Referrer" restrictions in the Google Cloud Console 
+// to only allow requests from 'localhost' and your specific domain (e.g., github.io).
 const firebaseConfig = {
     apiKey: "AIzaSyC4iNdPw5yaSiq3JQCkS-cawuCxRA39qvY",
     authDomain: "moneymanager-5pg.firebaseapp.com",
