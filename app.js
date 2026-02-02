@@ -50,6 +50,36 @@ const getFromLocalStorage = (weekId) => {
 
 // --- Initialization ---
 
+/* Helper to fix data structure (root-level categories -> expenses) */
+function migrateAndSanitize(data) {
+    if (!data) return data;
+
+    // Ensure expenses object
+    if (!data.expenses || typeof data.expenses !== 'object') {
+        data.expenses = {};
+    }
+
+    // Migrate all categories from root to expenses
+    // This handles 'groceries', 'petrol', etc. being at the top level
+    categories.forEach(cat => {
+        // If category exists at root (old data)
+        if (data[cat] !== undefined) {
+            const current = data.expenses[cat] || [];
+            // Merge array (handle single item vs array)
+            const toAdd = Array.isArray(data[cat]) ? data[cat] : [data[cat]];
+            data.expenses[cat] = [...current, ...toAdd];
+
+            // Remove from root to clean up
+            delete data[cat];
+        }
+
+        // Ensure category array exists in expenses
+        if (!data.expenses[cat]) data.expenses[cat] = [];
+    });
+
+    return data;
+}
+
 async function init() {
     // 1. Initial Defaults
     const initialData = {
@@ -61,36 +91,12 @@ async function init() {
     // 2. Load LocalStorage
     const local = getFromLocalStorage(weekId);
     if (local.success && local.data) {
-        weekData = local.data;
-        // Migration: Ensure 'groceries' is array
-        // Migration: Check if 'groceries' exists at root (old format)
-        if (weekData.groceries) {
-            if (!weekData.expenses) weekData.expenses = {};
-
-            // If it's an array, move it to expenses
-            if (Array.isArray(weekData.groceries)) {
-                // Merge if expenses.groceries already has data, or just set it
-                const current = weekData.expenses.groceries || [];
-                // Filter out duplicates based on ID if possible, or just concat
-                // Simple concat for now to ensure no data loss
-                weekData.expenses.groceries = [...current, ...weekData.groceries];
-            } else if (!weekData.expenses.groceries) {
-                // If not an array, just init entries if missing
-                weekData.expenses.groceries = [];
-            }
-            delete weekData.groceries;
-        }
+        weekData = migrateAndSanitize(local.data);
     } else {
         weekData = initialData;
     }
 
-    // 3. Ensure Categories
-    if (!weekData.expenses) weekData.expenses = {};
-    categories.forEach(cat => {
-        if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
-    });
-
-    // 4. Update UI (Dates)
+    // 3. UI Updates
     const dateDisplay = document.getElementById("date-display");
     if (dateDisplay) dateDisplay.textContent = todayString;
     const dayDisplay = document.getElementById("day-display");
@@ -98,27 +104,11 @@ async function init() {
 
     render(); // Display what we have immediately
 
-    // 5. Sync from Cloud (Real-time)
+    // 4. Sync from Cloud (Real-time)
     subscribeToWeekData(weekId, (data) => {
         if (data) {
-            weekData = data;
-            // Re-migrate if needed on cloud data
-            // Re-migrate if needed on cloud data
-            if (weekData.groceries) {
-                if (!weekData.expenses) weekData.expenses = {};
-
-                if (Array.isArray(weekData.groceries)) {
-                    const current = weekData.expenses.groceries || [];
-                    weekData.expenses.groceries = [...current, ...weekData.groceries];
-                } else if (!weekData.expenses.groceries) {
-                    weekData.expenses.groceries = [];
-                }
-                delete weekData.groceries;
-            }
-            if (!weekData.expenses) weekData.expenses = {};
-            categories.forEach(cat => {
-                if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
-            });
+            // Fix data coming from cloud (e.g. friend's phone)
+            weekData = migrateAndSanitize(data);
             render();
             // Update local storage to match cloud
             saveToLocalStorage(weekId, weekData);
