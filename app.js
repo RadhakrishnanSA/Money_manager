@@ -63,9 +63,21 @@ async function init() {
     if (local.success && local.data) {
         weekData = local.data;
         // Migration: Ensure 'groceries' is array
-        if (weekData.groceries && !Array.isArray(weekData.groceries)) {
+        // Migration: Check if 'groceries' exists at root (old format)
+        if (weekData.groceries) {
             if (!weekData.expenses) weekData.expenses = {};
-            weekData.expenses.groceries = [];
+
+            // If it's an array, move it to expenses
+            if (Array.isArray(weekData.groceries)) {
+                // Merge if expenses.groceries already has data, or just set it
+                const current = weekData.expenses.groceries || [];
+                // Filter out duplicates based on ID if possible, or just concat
+                // Simple concat for now to ensure no data loss
+                weekData.expenses.groceries = [...current, ...weekData.groceries];
+            } else if (!weekData.expenses.groceries) {
+                // If not an array, just init entries if missing
+                weekData.expenses.groceries = [];
+            }
             delete weekData.groceries;
         }
     } else {
@@ -91,9 +103,16 @@ async function init() {
         if (data) {
             weekData = data;
             // Re-migrate if needed on cloud data
-            if (weekData.groceries && !Array.isArray(weekData.groceries)) {
+            // Re-migrate if needed on cloud data
+            if (weekData.groceries) {
                 if (!weekData.expenses) weekData.expenses = {};
-                weekData.expenses.groceries = [];
+
+                if (Array.isArray(weekData.groceries)) {
+                    const current = weekData.expenses.groceries || [];
+                    weekData.expenses.groceries = [...current, ...weekData.groceries];
+                } else if (!weekData.expenses.groceries) {
+                    weekData.expenses.groceries = [];
+                }
                 delete weekData.groceries;
             }
             if (!weekData.expenses) weekData.expenses = {};
