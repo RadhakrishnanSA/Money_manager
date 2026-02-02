@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
 
 // New Firebase config provided by the user
 const firebaseConfig = {
@@ -47,6 +47,14 @@ export const getWeekData = async (weekId) => {
         console.error("Error getting week data:", error);
         return { success: false, error };
     }
+};
+
+export const subscribeToWeekData = (weekId, onData) => {
+    const dataRef = ref(db, `weeks/${weekId}`);
+    return onValue(dataRef, (snapshot) => {
+        const data = snapshot.val();
+        onData(data);
+    });
 };
 
 export const updateWeekData = async (weekId, updates) => {

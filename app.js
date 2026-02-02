@@ -1,5 +1,5 @@
 // firebase.js is now imported as module from the same directory
-import { saveWeekData, getWeekData, updateWeekData } from "./firebase.js";
+import { saveWeekData, getWeekData, updateWeekData, subscribeToWeekData } from "./firebase.js";
 
 // --- Global Setup ---
 window.onerror = function (msg, url, lineNo, columnNo, error) {
@@ -64,6 +64,7 @@ async function init() {
         weekData = local.data;
         // Migration: Ensure 'groceries' is array
         if (weekData.groceries && !Array.isArray(weekData.groceries)) {
+            if (!weekData.expenses) weekData.expenses = {};
             weekData.expenses.groceries = [];
             delete weekData.groceries;
         }
@@ -72,6 +73,7 @@ async function init() {
     }
 
     // 3. Ensure Categories
+    if (!weekData.expenses) weekData.expenses = {};
     categories.forEach(cat => {
         if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
     });
@@ -84,16 +86,17 @@ async function init() {
 
     render(); // Display what we have immediately
 
-    // 5. Sync from Cloud
-    try {
-        const result = await getWeekData(weekId);
-        if (result.success && result.data) {
-            weekData = result.data;
+    // 5. Sync from Cloud (Real-time)
+    subscribeToWeekData(weekId, (data) => {
+        if (data) {
+            weekData = data;
             // Re-migrate if needed on cloud data
             if (weekData.groceries && !Array.isArray(weekData.groceries)) {
+                if (!weekData.expenses) weekData.expenses = {};
                 weekData.expenses.groceries = [];
                 delete weekData.groceries;
             }
+            if (!weekData.expenses) weekData.expenses = {};
             categories.forEach(cat => {
                 if (!weekData.expenses[cat]) weekData.expenses[cat] = [];
             });
@@ -101,9 +104,7 @@ async function init() {
             // Update local storage to match cloud
             saveToLocalStorage(weekId, weekData);
         }
-    } catch (e) {
-        console.log("Offline mode");
-    }
+    });
 }
 
 async function persistData(data) {
