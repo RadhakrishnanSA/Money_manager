@@ -60,6 +60,19 @@ export const subscribeToWeekData = (weekId, onData) => {
     });
 };
 
+export const getAllWeeksData = async () => {
+    try {
+        const snapshot = await get(ref(db, `weeks`));
+        if (snapshot.exists()) {
+            return { success: true, data: snapshot.val() };
+        }
+        return { success: true, data: null };
+    } catch (error) {
+        console.error("Error getting all weeks data:", error);
+        return { success: false, error };
+    }
+};
+
 export const updateWeekData = async (weekId, updates) => {
     try {
         await update(ref(db, `weeks/${weekId}`), updates);

@@ -1,5 +1,4 @@
-// firebase.js is now imported as module from the same directory
-import { saveWeekData, getWeekData, updateWeekData, subscribeToWeekData } from "./firebase.js";
+import { saveWeekData, getWeekData, updateWeekData, subscribeToWeekData, getAllWeeksData } from "./firebase.js";
 
 // --- Global Setup ---
 window.onerror = function (msg, url, lineNo, columnNo, error) {
@@ -376,14 +375,87 @@ window.handleDeleteExpense = async (category, id) => {
 
 // View Switching
 window.showView = (id) => {
-    ["weekly-view", "timeline-view", "analytics-view", "monthly-view"].forEach(v => {
-        document.getElementById(v).style.display = (v === id) ? "block" : "none";
+    ["weekly-view", "timeline-view", "analytics-view", "monthly-view", "all-weeks-view"].forEach(v => {
+        const el = document.getElementById(v);
+        if (el) el.style.display = (v === id) ? "block" : "none";
     });
     window.scrollTo(0, 0);
 
     if (id === "timeline-view") renderTimeline();
     if (id === "analytics-view") renderCharts();
+    if (id === "all-weeks-view") renderAllWeeks();
 };
+
+async function renderAllWeeks() {
+    const container = document.getElementById("all-weeks-container");
+    container.innerHTML = "<p style='text-align:center; opacity:0.5;'>Loading...</p>";
+
+    const res = await getAllWeeksData();
+    if (!res.success || !res.data) {
+        container.innerHTML = "<p style='text-align:center; opacity:0.5;'>No data found</p>";
+        return;
+    }
+
+    const weeksObj = res.data;
+    const weekKeys = Object.keys(weeksObj).sort((a, b) => new Date(b) - new Date(a));
+
+    if (weekKeys.length === 0) {
+        container.innerHTML = "<p style='text-align:center; opacity:0.5;'>No weeks found</p>";
+        return;
+    }
+
+    container.innerHTML = "";
+
+    weekKeys.forEach(wkId => {
+        const wd = weeksObj[wkId];
+
+        // Ensure wd.expenses is formatted correctly (same as migrateAndSanitize)
+        if (!wd.expenses || typeof wd.expenses !== 'object') wd.expenses = {};
+
+        let localTotal = 0;
+        let cHTML = "";
+
+        categories.forEach(cat => {
+            // Support old and new format for processing
+            let catArr = wd.expenses[cat] || [];
+            if (wd[cat] !== undefined) {
+                const toAdd = Array.isArray(wd[cat]) ? wd[cat] : [wd[cat]];
+                catArr = [...catArr, ...toAdd];
+            }
+
+            const catSum = catArr.reduce((sum, e) => sum + (e.amount || 0), 0);
+            localTotal += catSum;
+
+            if (catSum > 0) {
+                cHTML += `
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 4px;">
+                        <span style="color:#aaa; text-transform:capitalize;">${cat}</span>
+                        <span>₹${catSum}</span>
+                    </div>
+                `;
+            }
+        });
+
+        const bHistory = wd.budgetHistory || [];
+        const wkBudget = bHistory.reduce((s, it) => s + (it.amount || 0), 0);
+
+        // Date formatting, assuming wkId is "YYYY-MM-DD"
+        const dObj = new Date(wkId);
+        const options = { month: 'short', day: 'numeric', year: 'numeric' };
+        const dStr = isNaN(dObj) ? wkId : dObj.toLocaleDateString(undefined, options);
+
+        container.innerHTML += `
+            <div class="expense-box" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">Week of ${dStr}</h3>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                    <span style="color:var(--success);">Budget: ₹${wkBudget}</span>
+                    <span style="color:${localTotal > wkBudget && wkBudget > 0 ? 'var(--danger)' : 'white'};">Spent: ₹${localTotal}</span>
+                </div>
+                ${cHTML === "" ? "<p style='color:#666; font-size:12px;'>No expenses recorded</p>" : cHTML}
+            </div>
+        `;
+    });
+}
 
 
 // Init

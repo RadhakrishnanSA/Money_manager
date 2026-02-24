@@ -73,6 +73,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
           <button class="view-btn" onclick="showView('timeline-view')" style="margin-top:0;">📝 Timeline</button>
           <button class="view-btn" onclick="showView('analytics-view')" style="margin-top:0;">📈 Analytics</button>
+          <button class="view-btn" onclick="showView('all-weeks-view')" style="margin-top:0; grid-column: span 2;">📅 All Weeks</button>
         </div>
       </div>
 
@@ -115,6 +116,17 @@
         <h2>Monthly</h2>
       </div>
       <p style="text-align:center; opacity:0.5; padding:40px;">Coming Soon</p>
+    </div>
+
+    <!-- VIEW: All Weeks -->
+    <div id="all-weeks-view" style="display: none;">
+      <div class="header-back">
+        <button class="back-btn" onclick="showView('weekly-view')">← Back</button>
+        <h2>All Weeks Data</h2>
+      </div>
+      <div class="section" id="all-weeks-container">
+        <p style="text-align:center; opacity:0.5;">Loading...</p>
+      </div>
     </div>
 
   </div>
