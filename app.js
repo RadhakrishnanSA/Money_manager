@@ -423,7 +423,7 @@ async function renderAllWeeks() {
                 catArr = [...catArr, ...toAdd];
             }
 
-            const catSum = catArr.reduce((sum, e) => sum + (e.amount || 0), 0);
+            const catSum = catArr.reduce((sum, e) => sum + (e ? (e.amount || 0) : 0), 0);
             localTotal += catSum;
 
             if (catSum > 0) {
@@ -437,7 +437,7 @@ async function renderAllWeeks() {
         });
 
         const bHistory = wd.budgetHistory || [];
-        const wkBudget = bHistory.reduce((s, it) => s + (it.amount || 0), 0);
+        const wkBudget = bHistory.reduce((s, it) => s + (it ? (it.amount || 0) : 0), 0);
 
         // Date formatting, assuming wkId is "YYYY-MM-DD"
         const dObj = new Date(wkId);
