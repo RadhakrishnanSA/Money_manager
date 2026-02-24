@@ -398,17 +398,20 @@ async function renderAllWeeks() {
 
     const weeksObj = res.data;
     // Sort oldest first so we can assign proper "Week X" sequentially
-    const weekKeys = Object.keys(weeksObj).sort((a, b) => new Date(a) - new Date(b));
+    const allWeekKeys = Object.keys(weeksObj).sort((a, b) => new Date(a) - new Date(b));
 
-    if (weekKeys.length === 0) {
-        container.innerHTML = "<p style='text-align:center; opacity:0.5;'>No weeks found</p>";
+    // Only show weeks that have completely finished (before the current week)
+    const completedWeekKeys = allWeekKeys.filter(k => k < weekId);
+
+    if (completedWeekKeys.length === 0) {
+        container.innerHTML = "<p style='text-align:center; opacity:0.5;'>No completed weeks found yet.</p>";
         return;
     }
 
     container.innerHTML = "";
 
-    [...weekKeys].reverse().forEach((wkId, revIdx) => {
-        const weekNum = weekKeys.length - revIdx;
+    [...completedWeekKeys].reverse().forEach((wkId) => {
+        const weekNum = allWeekKeys.indexOf(wkId) + 1;
         const wd = weeksObj[wkId];
 
         // Ensure wd.expenses is formatted correctly (same as migrateAndSanitize)
