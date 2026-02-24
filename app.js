@@ -397,7 +397,8 @@ async function renderAllWeeks() {
     }
 
     const weeksObj = res.data;
-    const weekKeys = Object.keys(weeksObj).sort((a, b) => new Date(b) - new Date(a));
+    // Sort oldest first so we can assign proper "Week X" sequentially
+    const weekKeys = Object.keys(weeksObj).sort((a, b) => new Date(a) - new Date(b));
 
     if (weekKeys.length === 0) {
         container.innerHTML = "<p style='text-align:center; opacity:0.5;'>No weeks found</p>";
@@ -406,7 +407,8 @@ async function renderAllWeeks() {
 
     container.innerHTML = "";
 
-    weekKeys.forEach(wkId => {
+    [...weekKeys].reverse().forEach((wkId, revIdx) => {
+        const weekNum = weekKeys.length - revIdx;
         const wd = weeksObj[wkId];
 
         // Ensure wd.expenses is formatted correctly (same as migrateAndSanitize)
@@ -439,18 +441,32 @@ async function renderAllWeeks() {
         const bHistory = wd.budgetHistory || [];
         const wkBudget = bHistory.reduce((s, it) => s + (it ? (it.amount || 0) : 0), 0);
 
-        // Date formatting, assuming wkId is "YYYY-MM-DD"
+        // Date formatting, assuming wkId is "YYYY-MM-DD", e.g. Feb 1 to Feb 7
         const dObj = new Date(wkId);
-        const options = { month: 'short', day: 'numeric', year: 'numeric' };
-        const dStr = isNaN(dObj) ? wkId : dObj.toLocaleDateString(undefined, options);
+        let titleStr = wkId; // Default fallback
+        if (!isNaN(dObj)) {
+            const dEnd = new Date(dObj);
+            dEnd.setDate(dEnd.getDate() + 6); // Add 6 days to get the Sunday of that week
+            const options = { month: 'short', day: 'numeric' };
+            titleStr = `${dObj.toLocaleDateString(undefined, options)} to ${dEnd.toLocaleDateString(undefined, options)}`;
+        }
+
+        const bal = wkBudget - localTotal;
+        const balColor = wkBudget === 0 ? 'white' : (bal < 0 ? 'var(--danger)' : bal < wkBudget * 0.1 ? '#f59e0b' : 'var(--success)');
 
         container.innerHTML += `
             <div class="expense-box" style="margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">Week of ${dStr}</h3>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                <h3 style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                    Week ${weekNum} <span style="font-size: 13px; color: #aaa; margin-left: 10px; font-weight: normal;">${titleStr}</span>
+                </h3>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
                     <span style="color:var(--success);">Budget: ₹${wkBudget}</span>
                     <span style="color:${localTotal > wkBudget && wkBudget > 0 ? 'var(--danger)' : 'white'};">Spent: ₹${localTotal}</span>
                 </div>
+                <div style="margin-bottom: 12px; font-weight: bold; color:${balColor}; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+                    Balance: ₹${bal}
+                </div>
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color:#888; margin-bottom: 8px;">Where Spent</div>
                 ${cHTML === "" ? "<p style='color:#666; font-size:12px;'>No expenses recorded</p>" : cHTML}
             </div>
         `;
